@@ -1,0 +1,575 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido - CRM Migratorio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/system_design.css' %}">
+    <style>
+        /* Estilos específicos para la Landing Page */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            overflow-x: hidden;
+        }
+
+        /* Contenedor Principal (Landing) */
+        .landing-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 10%;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Elementos decorativos de fondo */
+        .bg-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            background-image: radial-gradient(#ffffff 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+        }
+
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            pointer-events: none;
+        }
+
+        .circle-1 { width: 600px; height: 600px; top: -100px; right: -100px; }
+        .circle-2 { width: 400px; height: 400px; bottom: -50px; left: -50px; }
+
+        /* Contenido Principal */
+        .landing-content {
+            max-width: 800px;
+            z-index: 1;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .landing-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .landing-logo i {
+            font-size: 1.5rem;
+            color: var(--color-success-light);
+        }
+
+        .landing-logo span {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .landing-title {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .landing-subtitle {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+
+        .landing-features {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .feature-item i {
+            color: var(--color-success-light);
+        }
+
+        /* Botón Hamburguesa */
+        .menu-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .menu-toggle i {
+            font-size: 1.5rem;
+        }
+
+        /* Panel Lateral (Login/Registro) */
+        .side-panel {
+            position: fixed;
+            top: 0;
+            right: -100%; /* Oculto inicialmente */
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            background: white;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+            z-index: 99;
+            transition: right 0.4s cubic-bezier(0.77, 0, 0.175, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 3rem 2.5rem;
+            overflow-y: auto;
+        }
+
+        .side-panel.open {
+            right: 0;
+        }
+
+        /* Contenedor de Formularios con Transición */
+        .forms-container {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-wrapper {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(20px);
+        }
+
+        .form-wrapper.active {
+            position: relative;
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        /* Estilos del Formulario en el Panel */
+        .panel-header {
+            margin-bottom: 2rem;
+            margin-top: 1rem;
+        }
+
+        .panel-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .panel-subtitle {
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .auth-form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .auth-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            font-size: 0.9rem;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: var(--color-background-light);
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(31, 61, 58, 0.1);
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .auth-button:hover {
+            background: var(--color-primary-light);
+        }
+
+        .auth-button-outline {
+            background: white;
+            color: var(--color-primary);
+            border: 1px solid var(--color-border);
+            margin-top: 0;
+        }
+
+        .auth-button-outline:hover {
+            background: var(--color-background-light);
+            border-color: var(--color-primary);
+        }
+
+        .auth-footer {
+            margin-top: 2rem;
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--color-border-light);
+        }
+
+        .auth-alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .auth-alert-danger {
+            background: var(--color-danger-light);
+            color: var(--color-danger);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .landing-title { font-size: 2.5rem; }
+            .landing-wrapper { padding: 0 5%; }
+            .side-panel { width: 100%; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Landing Page Content -->
+    <div class="landing-wrapper">
+        <div class="bg-pattern"></div>
+        <div class="bg-circle circle-1"></div>
+        <div class="bg-circle circle-2"></div>
+
+        <div class="landing-content">
+            <div class="landing-logo">
+                <i class="fas fa-shield-halved"></i>
+                <span>CRM MIGRATORIO</span>
+            </div>
+
+            <h1 class="landing-title">Gestión Migratoria<br>Simplificada y Segura.</h1>
+
+            <p class="landing-subtitle">
+                Plataforma integral para la gestión eficiente de trámites de inmigración.
+                Conectamos solicitantes con expertos para agilizar su proceso hacia nuevas oportunidades.
+            </p>
+
+            <div class="landing-features">
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Seguimiento en tiempo real</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Gestión documental segura</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Asesoría personalizada</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón Hamburguesa -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú de inicio de sesión">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Panel Lateral de Login/Registro -->
+    <div class="side-panel" id="sidePanel">
+
+        <div class="forms-container">
+            <!-- Formulario de Login -->
+            <div class="form-wrapper active" id="loginForm">
+                <div class="panel-header">
+                    <h2 class="panel-title">Bienvenido</h2>
+                    <p class="panel-subtitle">Ingrese sus credenciales para acceder al sistema.</p>
+                </div>
+
+                {% if error and not is_register_error %}
+                    <div class="auth-alert auth-alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>{{ error }}</span>
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'usuarios:login' %}" class="auth-form">
+                    {% csrf_token %}
+
+                    <div class="auth-form-group">
+                        <label for="email" class="auth-label">
+                            <i class="fas fa-envelope" style="margin-right: 5px; color: var(--color-text-muted);"></i>
+                            Correo Electrónico
+                        </label>
+                        <input
+                            type="email"
+                            class="auth-input"
+                            id="email"
+                            name="email"
+                            placeholder="ejemplo@correo.com"
+                            required
+                        >
+                    </div>
+
+                    <div class="auth-form-group">
+                        <label for="password" class="auth-label">
+                            <i class="fas fa-lock" style="margin-right: 5px; color: var(--color-text-muted);"></i>
+                            Contraseña
+                        </label>
+                        <input
+                            type="password"
+                            class="auth-input"
+                            id="password"
+                            name="password"
+                            placeholder="••••••••"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="auth-button">
+                        <span>Iniciar Sesión</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">¿Aún no tiene una cuenta?</p>
+                    <button type="button" class="auth-button auth-button-outline" onclick="showRegister()">
+                        Crear Cuenta Nueva
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulario de Registro -->
+            <div class="form-wrapper" id="registerForm">
+                <div class="panel-header">
+                    <h2 class="panel-title">Crear Cuenta</h2>
+                    <p class="panel-subtitle">Complete el formulario para registrarse.</p>
+                </div>
+
+                {% if error and is_register_error %}
+                    <div class="auth-alert auth-alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>{{ error }}</span>
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'usuarios:registro' %}" class="auth-form">
+                    {% csrf_token %}
+
+                    <div class="auth-form-group">
+                        <label for="reg_nombre" class="auth-label">
+                            <i class="fas fa-user" style="margin-right: 5px; color: var(--color-text-muted);"></i>
+                            Nombre Completo
+                        </label>
+                        <input
+                            type="text"
+                            class="auth-input"
+                            id="reg_nombre"
+                            name="nombre"
+                            placeholder="Ingrese su nombre completo"
+                            required
+                        >
+                    </div>
+
+                    <div class="auth-form-group">
+                        <label for="reg_email" class="auth-label">
+                            <i class="fas fa-envelope" style="margin-right: 5px; color: var(--color-text-muted);"></i>
+                            Correo Electrónico
+                        </label>
+                        <input
+                            type="email"
+                            class="auth-input"
+                            id="reg_email"
+                            name="email"
+                            placeholder="ejemplo@correo.com"
+                            required
+                        >
+                    </div>
+
+                    <div class="auth-form-group">
+                        <label for="reg_password" class="auth-label">
+                            <i class="fas fa-lock" style="margin-right: 5px; color: var(--color-text-muted);"></i>
+                            Contraseña
+                        </label>
+                        <input
+                            type="password"
+                            class="auth-input"
+                            id="reg_password"
+                            name="password"
+                            placeholder="Mínimo 8 caracteres"
+                            required
+                        >
+                    </div>
+
+                    <div class="auth-form-group">
+                        <label for="reg_password_confirm" class="auth-label">
+                            <i class="fas fa-lock" style="margin-right: 5px; color: var(--color-text-muted);"></i>
+                            Confirmar Contraseña
+                        </label>
+                        <input
+                            type="password"
+                            class="auth-input"
+                            id="reg_password_confirm"
+                            name="password_confirm"
+                            placeholder="Repita su contraseña"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="auth-button">
+                        <span>Registrarse</span>
+                        <i class="fas fa-check-circle"></i>
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">¿Ya tiene una cuenta?</p>
+                    <button type="button" class="auth-button auth-button-outline" onclick="showLogin()">
+                        Iniciar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const menuToggle = document.getElementById('menuToggle');
+        const sidePanel = document.getElementById('sidePanel');
+        const icon = menuToggle.querySelector('i');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        let isOpen = false;
+
+        // Toggle del menú lateral
+        menuToggle.addEventListener('click', () => {
+            isOpen = !isOpen;
+            sidePanel.classList.toggle('open');
+
+            if (isOpen) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+                menuToggle.style.color = 'var(--color-primary)';
+                menuToggle.style.background = 'rgba(0,0,0,0.05)';
+                menuToggle.style.borderColor = 'transparent';
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+                menuToggle.style.color = 'white';
+                menuToggle.style.background = 'rgba(255, 255, 255, 0.1)';
+                menuToggle.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            }
+        });
+
+        // Cerrar panel al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (isOpen && !sidePanel.contains(e.target) && !menuToggle.contains(e.target)) {
+                isOpen = false;
+                sidePanel.classList.remove('open');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+                menuToggle.style.color = 'white';
+                menuToggle.style.background = 'rgba(255, 255, 255, 0.1)';
+                menuToggle.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            }
+        });
+
+        // Funciones para alternar entre Login y Registro
+        function showRegister() {
+            loginForm.classList.remove('active');
+            setTimeout(() => {
+                registerForm.classList.add('active');
+            }, 300); // Espera a que termine la transición de salida
+        }
+
+        function showLogin() {
+            registerForm.classList.remove('active');
+            setTimeout(() => {
+                loginForm.classList.add('active');
+            }, 300);
+        }
+    </script>
+</body>
+</html>

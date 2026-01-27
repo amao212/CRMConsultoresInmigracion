@@ -1,0 +1,237 @@
+<div class="timeline-container">
+    {% for cambio in historial %}
+    <div class="timeline-item">
+        <div class="timeline-marker-wrapper">
+            <div class="timeline-marker {% if cambio.estado_nuevo == 'APROBADO' %}marker-success{% elif cambio.estado_nuevo == 'RECHAZADO' %}marker-danger{% else %}marker-primary{% endif %}"></div>
+            <div class="timeline-line"></div>
+        </div>
+        <div class="timeline-content-wrapper">
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <span class="timeline-title {% if cambio.estado_nuevo == 'APROBADO' %}text-success{% elif cambio.estado_nuevo == 'RECHAZADO' %}text-danger{% else %}text-primary{% endif %}">
+                        {% if cambio.estado_nuevo == 'APROBADO' %}
+                            <i class="fas fa-check-circle me-1"></i> Aprobado
+                        {% elif cambio.estado_nuevo == 'RECHAZADO' %}
+                            <i class="fas fa-times-circle me-1"></i> Rechazado
+                        {% else %}
+                            <i class="fas fa-exchange-alt me-1"></i> Cambio de Estado
+                        {% endif %}
+                    </span>
+                    <span class="timeline-date">
+                        <i class="far fa-clock me-1"></i> {{ cambio.fecha_cambio|date:"d/m/Y H:i" }}
+                    </span>
+                </div>
+
+                <div class="timeline-body">
+                    <p class="timeline-description">{{ cambio.descripcion }}</p>
+                </div>
+
+                <div class="timeline-footer">
+                    <div class="timeline-user">
+                        <div class="user-avatar-small">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name">{{ cambio.usuario.nombre|default:"Sistema" }}</span>
+                    </div>
+                    {% if cambio.estado_anterior %}
+                    <div class="timeline-meta">
+                        <span class="badge-outline">{{ cambio.estado_anterior }}</span>
+                        <i class="fas fa-arrow-right mx-1 text-muted" style="font-size: 0.8em;"></i>
+                        <span class="badge-outline">{{ cambio.estado_nuevo }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-history"></i>
+        </div>
+        <p class="empty-text">No hay historial de cambios registrado.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .timeline-container {
+        position: relative;
+        padding: var(--spacing-sm) 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        margin-bottom: var(--spacing-lg);
+        position: relative;
+    }
+
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .timeline-item:last-child .timeline-line {
+        display: none;
+    }
+
+    .timeline-marker-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-right: var(--spacing-md);
+        width: 24px;
+        flex-shrink: 0;
+    }
+
+    .timeline-marker {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid var(--color-surface);
+        box-shadow: 0 0 0 2px var(--color-border);
+        z-index: 2;
+        background-color: var(--color-text-muted); /* Default */
+    }
+
+    .marker-success { background-color: var(--color-success); box-shadow: 0 0 0 2px var(--color-success-light); }
+    .marker-danger { background-color: var(--color-danger); box-shadow: 0 0 0 2px var(--color-danger-light); }
+    .marker-primary { background-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-subtle); }
+
+    .timeline-line {
+        flex-grow: 1;
+        width: 2px;
+        background-color: var(--color-border);
+        margin-top: 4px;
+        margin-bottom: -20px; /* Connect to next item */
+    }
+
+    .timeline-content-wrapper {
+        flex-grow: 1;
+    }
+
+    .timeline-card {
+        background-color: var(--color-background-light);
+        border-radius: var(--border-radius-md);
+        padding: var(--spacing-md);
+        border: 1px solid var(--color-border);
+        transition: transform 0.2s ease;
+    }
+
+    .timeline-card:hover {
+        border-color: var(--color-primary-subtle);
+    }
+
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-sm);
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+
+    .timeline-title {
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-sm);
+        display: flex;
+        align-items: center;
+    }
+
+    .text-success { color: var(--color-success); }
+    .text-danger { color: var(--color-danger); }
+    .text-primary { color: var(--color-primary); }
+
+    .timeline-date {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+    }
+
+    .timeline-body {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .timeline-description {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+    }
+
+    .timeline-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--color-border);
+        padding-top: var(--spacing-sm);
+        margin-top: var(--spacing-sm);
+    }
+
+    .timeline-user {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .user-avatar-small {
+        width: 20px;
+        height: 20px;
+        background-color: var(--color-border);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: var(--color-text-secondary);
+    }
+
+    .user-name {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        font-weight: var(--font-weight-medium);
+    }
+
+    .timeline-meta {
+        display: flex;
+        align-items: center;
+    }
+
+    .badge-outline {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid var(--color-border);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--color-text-muted);
+    }
+
+    .empty-icon {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-sm);
+        opacity: 0.5;
+    }
+
+    .empty-text {
+        font-size: var(--font-size-sm);
+        margin: 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .timeline-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .timeline-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+        }
+    }
+</style>

@@ -1,0 +1,296 @@
+{% extends 'empleado/base_empleado.html' %}
+{% load static %}
+
+{% block title %}Detalle del Trámite #{{ tramite.id }} - Empleado{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Fix para el botón de aprobar si la clase no está definida correctamente en el CSS global */
+    .btn-success-custom {
+        background-color: var(--color-success);
+        color: white;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .btn-success-custom:hover {
+        background-color: #157347; /* Un verde un poco más oscuro */
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-danger-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'empleado:dashboard' %}" class="btn-custom btn-secondary-custom">
+                <i class="fas fa-arrow-left"></i> Volver a Mis Trámites
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna Izquierda: Información y Acciones -->
+        <div class="col-lg-4">
+            <!-- Información del Trámite -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2" style="color: var(--color-primary); font-size: var(--font-size-lg);"></i>
+                        <h4 class="mb-0" style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);">Información del Trámite</h4>
+                    </div>
+                    <div id="estado-badge-container">
+                        {% include 'empleado/partials/estado_badge.html' with estado=tramite.estado %}
+                    </div>
+                </div>
+                <div class="card-body-custom">
+                    <h5 class="mb-4" style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-primary);">
+                        #{{ tramite.id }}
+                    </h5>
+
+                    <div class="info-group mb-3">
+                        <label class="text-muted small text-uppercase fw-bold mb-1">Tipo de Trámite</label>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-file-alt me-2 text-muted"></i>
+                            <span class="fw-medium">{{ tramite.nombre }}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-group mb-3">
+                        <label class="text-muted small text-uppercase fw-bold mb-1">Solicitante</label>
+                        <div class="d-flex align-items-start">
+                            <div class="me-2 mt-1">
+                                <div style="width: 32px; height: 32px; background: var(--color-primary-subtle); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--color-primary);">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="fw-medium">{{ tramite.solicitante.nombre }}</div>
+                                <div class="text-muted small">{{ tramite.solicitante.email }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            {% if puede_aprobar_rechazar %}
+            <div class="card-custom mb-4" id="acciones-container">
+                <div class="card-header-custom d-flex align-items-center bg-light">
+                    <i class="fas fa-tasks me-2 text-secondary"></i>
+                    <h5 class="mb-0" style="font-size: var(--font-size-base); font-weight: var(--font-weight-semibold);">Acciones Disponibles</h5>
+                </div>
+                <div class="card-body-custom">
+                    <form method="POST" action="{% url 'empleado:aprobar-tramite' tramite.id %}" class="mb-4" id="formAprobar">
+                        {% csrf_token %}
+                        <button type="button" class="btn-custom btn-success-custom w-100 justify-content-center py-2" onclick="showApproveModal()">
+                            <i class="fas fa-check-circle"></i> Aprobar Trámite
+                        </button>
+                    </form>
+                    <div class="d-flex align-items-center mb-3">
+                        <hr class="flex-grow-1" style="border-color: var(--color-border);">
+                        <span class="px-2 text-muted small text-uppercase fw-bold">O rechazar</span>
+                        <hr class="flex-grow-1" style="border-color: var(--color-border);">
+                    </div>
+                    <form method="POST" action="{% url 'empleado:rechazar-tramite' tramite.id %}" id="formRechazar">
+                        {% csrf_token %}
+                        <div class="form-group-custom mb-3">
+                            <label for="motivo_rechazo" class="form-label-custom text-danger" style="font-weight: var(--font-weight-medium);">
+                                <i class="fas fa-comment-alt me-1"></i> Motivo del Rechazo <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-input-custom" id="motivo_rechazo" name="motivo_rechazo" rows="3" required placeholder="Indique claramente por qué se rechaza el trámite..." style="resize: none; font-size: var(--font-size-sm);"></textarea>
+                            <span id="motivo_error" style="display:none; color: var(--color-danger); font-size: var(--font-size-xs); margin-top: var(--spacing-xs); align-items: center; gap: 0.25rem;">
+                                <i class="fas fa-exclamation-circle"></i> Por favor, ingrese un motivo para el rechazo.
+                            </span>
+                        </div>
+                        <button type="button" class="btn-custom btn-danger-custom w-100 justify-content-center py-2" onclick="showRejectModal()">
+                            <i class="fas fa-times-circle"></i> Rechazar Trámite
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna Derecha: Visor y Historial -->
+        <div class="col-lg-8">
+            <!-- Visor de PDF -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-file-pdf me-2 text-danger" style="font-size: var(--font-size-lg);"></i>
+                        <h4 class="mb-0" style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);">Documento del Trámite</h4>
+                    </div>
+                    {% if documento %}
+                        <a href="{% url 'empleado:visualizar-pdf' tramite.id %}" target="_blank" class="btn-custom btn-outline-custom btn-sm">
+                            <i class="fas fa-external-link-alt"></i> Abrir en nueva pestaña
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body-custom p-0" style="min-height: 400px; background-color: var(--color-background-light);">
+                    {% if documento %}
+                        <iframe src="{% url 'empleado:visualizar-pdf' tramite.id %}" width="100%" height="600px" style="border: none; display: block;"></iframe>
+                    {% else %}
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 p-5 text-center">
+                            <div class="bg-warning-subtle p-4 rounded-circle mb-3">
+                                <i class="fas fa-file-excel text-warning" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="text-muted">Documento no disponible</h5>
+                            <p class="text-muted small">No se encontró el archivo PDF asociado a este trámite.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Historial de Cambios -->
+            <div class="card-custom">
+                <div class="card-header-custom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-history me-2 text-secondary"></i>
+                        <h5 class="mb-0" style="font-size: var(--font-size-base); font-weight: var(--font-weight-semibold);">Historial de Cambios</h5>
+                    </div>
+                    <div id="last-updated-container" class="text-muted small">
+                        <i class="fas fa-sync-alt fa-spin me-1"></i> Verificando...
+                    </div>
+                </div>
+                <div class="card-body-custom">
+                    <div id="historial-timeline">
+                        {% include 'empleado/partials/historial_timeline.html' with historial=historial %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modales -->
+{% include 'empleado/partials/modals.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Funciones para el Modal de Aprobación
+    function showApproveModal() {
+        document.getElementById('approveModal').style.display = 'flex';
+    }
+
+    function hideApproveModal() {
+        document.getElementById('approveModal').style.display = 'none';
+    }
+
+    function submitApproveForm() {
+        document.getElementById('formAprobar').submit();
+    }
+
+    // Funciones para el Modal de Rechazo
+    function showRejectModal() {
+        const motivoInput = document.getElementById('motivo_rechazo');
+        const motivoError = document.getElementById('motivo_error');
+        const motivo = motivoInput.value;
+
+        if (!motivo.trim()) {
+            motivoInput.style.borderColor = 'var(--color-danger)';
+            motivoError.style.display = 'flex';
+            motivoInput.focus();
+            return;
+        }
+
+        motivoInput.style.borderColor = '';
+        motivoError.style.display = 'none';
+        document.getElementById('rejectModal').style.display = 'flex';
+    }
+
+    function hideRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+    }
+
+    function submitRejectForm() {
+        document.getElementById('formRechazar').submit();
+    }
+
+    // Cerrar modales al hacer clic fuera
+    window.onclick = function(event) {
+        const approveModal = document.getElementById('approveModal');
+        const rejectModal = document.getElementById('rejectModal');
+        if (event.target == approveModal) hideApproveModal();
+        if (event.target == rejectModal) hideRejectModal();
+    }
+
+    // Polling para monitoreo en tiempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        const tramiteId = {{ tramite.id }};
+        const apiUrl = `{% url 'empleado:api-estado-tramite' tramite_id=tramite.id %}`;
+        const lastUpdatedContainer = document.getElementById('last-updated-container');
+        const badgeContainer = document.getElementById('estado-badge-container');
+        const timelineContainer = document.getElementById('historial-timeline');
+        const accionesContainer = document.getElementById('acciones-container');
+
+        let lastUpdated = null;
+
+        function timeSince(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " años";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " meses";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + " días";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + " horas";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + " minutos";
+            return "unos segundos";
+        }
+
+        function fetchEstado() {
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (lastUpdated && lastUpdated === data.ultima_actualizacion) {
+                        // No hay cambios, solo actualizar el "hace..."
+                        const date = new Date(data.ultima_actualizacion);
+                        lastUpdatedContainer.innerHTML = `<i class="far fa-clock me-1"></i> Actualizado hace ${timeSince(date)}`;
+                        return;
+                    }
+
+                    // Hay cambios, actualizar la UI sin recargar
+                    lastUpdated = data.ultima_actualizacion;
+                    const date = new Date(data.ultima_actualizacion);
+                    lastUpdatedContainer.innerHTML = `<i class="far fa-clock me-1"></i> Actualizado hace ${timeSince(date)}`;
+
+                    // Actualizar Badge
+                    if (data.badge_html) {
+                        badgeContainer.innerHTML = data.badge_html;
+                    }
+
+                    // Actualizar Timeline
+                    if (data.timeline_html) {
+                        timelineContainer.innerHTML = data.timeline_html;
+                    }
+
+                    // Si el estado ya no es PENDIENTE, ocultar acciones
+                    if (data.estado !== 'PENDIENTE' && accionesContainer) {
+                        accionesContainer.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en polling:', error);
+                    lastUpdatedContainer.innerHTML = `<i class="fas fa-exclamation-circle text-danger me-1"></i> Error de conexión`;
+                });
+        }
+
+        // Iniciar polling cada 5 segundos (más rápido para "tiempo real")
+        setInterval(fetchEstado, 5000);
+        fetchEstado(); // Llamada inicial
+    });
+</script>
+{% endblock %}

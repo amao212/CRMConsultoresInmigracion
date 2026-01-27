@@ -1,0 +1,194 @@
+{% extends 'empleado/base_empleado.html' %}
+{% load static %}
+
+{% block title %}Mis Trámites Asignados{% endblock %}
+{% block page_title %}Mis Trámites Asignados{% endblock %}
+
+{% block content %}
+<!-- Estadísticas -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-label">Pendientes</div>
+            <div class="stat-value">{{ total_pendientes }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-label">Aprobados</div>
+            <div class="stat-value">{{ total_aprobados }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fas fa-times-circle"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-label">Rechazados</div>
+            <div class="stat-value">{{ total_rechazados }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-clipboard-list"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-label">Total Asignados</div>
+            <div class="stat-value">{{ total_asignados }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Trámites Pendientes -->
+<div class="card-custom" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header-custom" style="background: var(--color-warning-light); border-color: var(--color-warning);">
+        <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0; color: var(--color-warning);">
+            <i class="fas fa-clock" style="margin-right: var(--spacing-sm);"></i>
+            Trámites Pendientes de Revisión
+        </h3>
+    </div>
+    <div class="card-body-custom">
+        {% if tramites_pendientes %}
+            <div style="overflow-x: auto;">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo de Trámite</th>
+                            <th>Solicitante</th>
+                            <th>Fecha de Inicio</th>
+                            <th>Fecha Límite</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tramite in tramites_pendientes %}
+                        <tr>
+                            <td><strong style="color: var(--color-primary);">#{{ tramite.id }}</strong></td>
+                            <td>{{ tramite.nombre }}</td>
+                            <td>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-xs); margin-bottom: 2px;">
+                                        <i class="fas fa-user" style="color: var(--color-primary);"></i>
+                                        <strong>{{ tramite.solicitante.nombre }}</strong>
+                                    </div>
+                                    <small style="color: var(--color-text-muted);">{{ tramite.solicitante.email }}</small>
+                                </div>
+                            </td>
+                            <td>{{ tramite.fecha_inicio|date:"d/m/Y H:i" }}</td>
+                            <td>{{ tramite.fecha_limite|date:"d/m/Y" }}</td>
+                            <td>
+                                <span class="badge-custom badge-warning">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ tramite.get_estado_display }}</span>
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'empleado:detalle-tramite' tramite.id %}" class="btn-custom btn-primary-custom" style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);">
+                                    <i class="fas fa-eye"></i>
+                                    <span>Ver Detalle</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert-custom alert-custom-info">
+                <i class="fas fa-info-circle"></i>
+                <div>No tiene trámites pendientes de revisión.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Todos los Trámites -->
+<div class="card-custom">
+    <div class="card-header-custom">
+        <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
+            <i class="fas fa-list" style="margin-right: var(--spacing-sm); color: var(--color-primary);"></i>
+            Todos Mis Trámites
+        </h3>
+    </div>
+    <div class="card-body-custom">
+        {% if tramites_todos %}
+            <div style="overflow-x: auto;">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo de Trámite</th>
+                            <th>Solicitante</th>
+                            <th>Fecha de Inicio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tramite in tramites_todos %}
+                        <tr>
+                            <td><strong style="color: var(--color-primary);">#{{ tramite.id }}</strong></td>
+                            <td>{{ tramite.nombre }}</td>
+                            <td>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-xs); margin-bottom: 2px;">
+                                        <i class="fas fa-user" style="color: var(--color-primary);"></i>
+                                        <strong>{{ tramite.solicitante.nombre }}</strong>
+                                    </div>
+                                    <small style="color: var(--color-text-muted);">{{ tramite.solicitante.email }}</small>
+                                </div>
+                            </td>
+                            <td>{{ tramite.fecha_inicio|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if tramite.estado == 'PENDIENTE' %}
+                                    <span class="badge-custom badge-warning">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ tramite.get_estado_display }}</span>
+                                    </span>
+                                {% elif tramite.estado == 'APROBADO' %}
+                                    <span class="badge-custom badge-success">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>{{ tramite.get_estado_display }}</span>
+                                    </span>
+                                {% elif tramite.estado == 'RECHAZADO' %}
+                                    <span class="badge-custom badge-danger">
+                                        <i class="fas fa-times-circle"></i>
+                                        <span>{{ tramite.get_estado_display }}</span>
+                                    </span>
+                                {% else %}
+                                    <span class="badge-custom badge-info">
+                                        <span>{{ tramite.get_estado_display }}</span>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'empleado:detalle-tramite' tramite.id %}" class="btn-custom btn-secondary-custom" style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);">
+                                    <i class="fas fa-eye"></i>
+                                    <span>Ver</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert-custom alert-custom-info">
+                <i class="fas fa-info-circle"></i>
+                <div>No tiene trámites asignados.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

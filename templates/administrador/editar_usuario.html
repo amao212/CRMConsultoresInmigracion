@@ -1,0 +1,179 @@
+{% extends "administrador/base_admin.html" %}
+
+{% block title %}Editar Usuario{% endblock %}
+{% block page_title %}Editar Usuario{% endblock %}
+
+{% block content %}
+<div class="container-custom">
+    <!-- Encabezado con botón de volver -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1" style="font-size: var(--font-size-2xl);">
+                <i class="fas fa-user-edit" style="margin-right: var(--spacing-sm); color: var(--color-primary);"></i>
+                Editar Usuario
+            </h2>
+            <p style="color: var(--color-text-secondary); margin: 0;">
+                Modifique los datos del usuario seleccionado.
+            </p>
+        </div>
+        <a href="{% url 'usuarios:gestion-empleados' %}" class="btn-custom btn-secondary-custom">
+            <i class="fas fa-arrow-left"></i>
+            <span>Volver al listado</span>
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin: 0;">
+                        Datos del Usuario
+                    </h3>
+                </div>
+                <div class="card-body-custom">
+                    <form method="post" class="form-section-custom mb-0" style="border: none; padding: 0; box-shadow: none;">
+                        {% csrf_token %}
+
+                        <!-- Grid de campos principales -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-xl); margin-bottom: var(--spacing-xl);">
+
+                            <!-- Columna 1 -->
+                            <div>
+                                <div class="form-group-custom">
+                                    <label for="nombre" class="form-label-custom">
+                                        Nombre Completo <span style="color: var(--color-danger);">*</span>
+                                    </label>
+                                    <div style="position: relative;">
+                                        <i class="fas fa-user" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted);"></i>
+                                        <input type="text"
+                                               class="form-input-custom"
+                                               style="padding-left: 2.5rem;"
+                                               id="nombre"
+                                               name="nombre"
+                                               value="{{ usuario_editar.nombre }}"
+                                               required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-custom">
+                                    <label for="rol" class="form-label-custom">
+                                        Rol de Usuario <span style="color: var(--color-danger);">*</span>
+                                    </label>
+                                    <div style="position: relative;">
+                                        <i class="fas fa-user-tag" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted);"></i>
+                                        <select class="form-input-custom"
+                                                style="padding-left: 2.5rem; appearance: none;"
+                                                id="rol"
+                                                name="rol"
+                                                required>
+                                            <option value="EMPLEADO" {% if usuario_editar.rol == 'EMPLEADO' %}selected{% endif %}>Empleado</option>
+                                            <option value="ADMINISTRADOR" {% if usuario_editar.rol == 'ADMINISTRADOR' %}selected{% endif %}>Administrador</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna 2 -->
+                            <div>
+                                <div class="form-group-custom">
+                                    <label for="email" class="form-label-custom">
+                                        Correo Electrónico <span style="color: var(--color-danger);">*</span>
+                                    </label>
+                                    <div style="position: relative;">
+                                        <i class="fas fa-envelope" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted);"></i>
+                                        <input type="email"
+                                               class="form-input-custom"
+                                               style="padding-left: 2.5rem;"
+                                               id="email"
+                                               name="email"
+                                               value="{{ usuario_editar.email }}"
+                                               required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-custom">
+                                    <label for="activo" class="form-label-custom">
+                                        Estado de la Cuenta
+                                    </label>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-md); padding: 0.5rem 0;">
+                                        <div class="form-check form-switch" style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   id="activo"
+                                                   name="activo"
+                                                   style="width: 2.5rem; height: 1.25rem; cursor: pointer;"
+                                                   {% if usuario_editar.is_active %}checked{% endif %}>
+                                            <label class="form-check-label" for="activo" style="cursor: pointer; font-weight: var(--font-weight-medium);">
+                                                {% if usuario_editar.is_active %}
+                                                    <span class="badge-custom badge-success">Usuario Activo</span>
+                                                {% else %}
+                                                    <span class="badge-custom badge-danger">Usuario Inactivo</span>
+                                                {% endif %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Contraseña -->
+                        <div style="background: var(--color-background-light); border-radius: var(--border-radius-md); padding: var(--spacing-lg); margin-bottom: var(--spacing-xl); border: 1px solid var(--color-border-light);">
+                            <h4 style="font-size: var(--font-size-base); margin-bottom: var(--spacing-md); color: var(--color-text-primary);">
+                                <i class="fas fa-lock" style="margin-right: var(--spacing-sm); color: var(--color-warning);"></i>
+                                Seguridad
+                            </h4>
+                            <div class="form-group-custom mb-0">
+                                <label for="password" class="form-label-custom">
+                                    Nueva Contraseña
+                                </label>
+                                <div style="position: relative;">
+                                    <i class="fas fa-key" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted);"></i>
+                                    <input type="password"
+                                           class="form-input-custom"
+                                           style="padding-left: 2.5rem;"
+                                           id="password"
+                                           name="password"
+                                           placeholder="Dejar en blanco para mantener la actual">
+                                </div>
+                                <span style="font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: var(--spacing-xs); display: block;">
+                                    Solo complete este campo si desea cambiar la contraseña del usuario.
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta de Información del Usuario -->
+                        <div class="alert-custom alert-custom-info" style="margin-bottom: var(--spacing-xl);">
+                            <i class="fas fa-info-circle" style="font-size: var(--font-size-lg);"></i>
+                            <div style="width: 100%;">
+                                <strong style="display: block; margin-bottom: var(--spacing-xs);">Información del Sistema</strong>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+                                    <div>
+                                        <span style="color: var(--color-text-secondary); font-size: var(--font-size-xs); text-transform: uppercase;">ID de Usuario</span>
+                                        <div style="font-family: monospace; font-size: var(--font-size-sm); font-weight: bold;">#{{ usuario_editar.id }}</div>
+                                    </div>
+                                    <div>
+                                        <span style="color: var(--color-text-secondary); font-size: var(--font-size-xs); text-transform: uppercase;">Fecha de Creación</span>
+                                        <div style="font-size: var(--font-size-sm);">{{ usuario_editar.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="d-flex justify-content-end gap-3 pt-4" style="border-top: 1px solid var(--color-border-light);">
+                            <a href="{% url 'usuarios:gestion-empleados' %}" class="btn-custom btn-secondary-custom">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn-custom btn-primary-custom">
+                                <i class="fas fa-save"></i>
+                                <span>Guardar Cambios</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

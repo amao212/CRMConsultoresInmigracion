@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Portal del Solicitante{% endblock %} - CRM Migratorio</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/system_design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <aside class="dashboard-sidebar" id="sidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-passport"></i>
+                </div>
+                <div class="sidebar-logo-text">
+                    <span class="sidebar-logo-title">CRM Migratorio</span>
+                    <span class="sidebar-logo-subtitle">Portal del Solicitante</span>
+                </div>
+            </div>
+
+            <!-- Navegación -->
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">
+                    <h6 class="sidebar-section-title">Principal</h6>
+                    <a href="{% url 'usuarios:dashboard-solicitante' %}" class="sidebar-item">
+                        <i class="fas fa-home"></i>
+                        <span>Panel Principal</span>
+                    </a>
+                </div>
+
+                <div class="sidebar-section">
+                    <h6 class="sidebar-section-title">Iniciar Trámite</h6>
+                    {% for segmento, plantillas in menu_plantillas.items %}
+                        <div class="sidebar-accordion-item">
+                            <button class="sidebar-accordion-button" onclick="toggleAccordion(this)">
+                                <span>{{ segmento }}</span>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </button>
+                            <div class="sidebar-accordion-content">
+                                <div class="sidebar-accordion-list">
+                                    {% for plantilla in plantillas %}
+                                        <a href="#" class="sidebar-sub-item btn-cargar-formulario"
+                                           data-plantilla-id="{{ plantilla.id }}">
+                                            {{ plantilla.tipo }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p style="padding: 0 var(--spacing-lg); font-size: var(--font-size-sm); color: var(--color-text-muted);">
+                            No hay trámites disponibles.
+                        </p>
+                    {% endfor %}
+                </div>
+            </nav>
+
+            <!-- Usuario -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name">{{ user.nombre|default:"Solicitante" }}</div>
+                        <div class="sidebar-user-role">Solicitante</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <div class="dashboard-main">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="dashboard-header-left">
+                    <button class="btn-custom btn-secondary-custom" id="toggleSidebar" style="display: none;">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="dashboard-header-title">{% block page_title %}Portal del Solicitante{% endblock %}</h1>
+                </div>
+                <div class="dashboard-header-right">
+                    <div class="header-user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="header-user-name">{{ user.nombre|default:"Solicitante" }}</span>
+                    </div>
+                    <a href="{% url 'usuarios:logout' %}" class="header-logout-btn">
+                        <i class="fas fa-arrow-right-from-bracket"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Contenido -->
+            <main class="dashboard-content">
+                {% if messages %}
+                    <div style="margin-bottom: var(--spacing-xl);">
+                        {% for message in messages %}
+                            <div class="alert-custom alert-custom-{{ message.tags }}">
+                                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'danger' %}times-circle{% else %}info-circle{% endif %}"></i>
+                                <div>{{ message }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Toggle accordion
+        function toggleAccordion(button) {
+            const content = button.nextElementSibling;
+            const isOpen = content.classList.contains('open');
+
+            // Cerrar todos los accordions
+            document.querySelectorAll('.sidebar-accordion-content').forEach(item => {
+                item.classList.remove('open');
+            });
+            document.querySelectorAll('.sidebar-accordion-button').forEach(btn => {
+                btn.setAttribute('aria-expanded', 'false');
+            });
+
+            // Abrir el clickeado si estaba cerrado
+            if (!isOpen) {
+                content.classList.add('open');
+                button.setAttribute('aria-expanded', 'true');
+            }
+        }
+
+        // Toggle sidebar en móvil
+        document.getElementById('toggleSidebar')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // Mostrar botón de toggle en móvil
+        if (window.innerWidth <= 1024) {
+            document.getElementById('toggleSidebar').style.display = 'flex';
+        }
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 1024) {
+                document.getElementById('toggleSidebar').style.display = 'flex';
+            } else {
+                document.getElementById('toggleSidebar').style.display = 'none';
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

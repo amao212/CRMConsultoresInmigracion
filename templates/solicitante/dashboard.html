@@ -1,0 +1,166 @@
+{% extends "solicitante/base_solicitante.html" %}
+
+{% block title %}Panel Principal{% endblock %}
+{% block page_title %}Panel Principal{% endblock %}
+
+{% block content %}
+<div id="contenido-principal">
+    <!-- Welcome Section -->
+    <div class="card-custom" style="margin-bottom: var(--spacing-xl);">
+        <div class="card-body-custom">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md);">
+                Bienvenido, <strong>{{ user.nombre|default:"Solicitante" }}</strong>
+            </h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 0;">
+                Este es su centro de operaciones. Desde el menú lateral puede iniciar un nuevo trámite
+                seleccionando una de las opciones disponibles. El formulario correspondiente se cargará en esta área.
+            </p>
+        </div>
+    </div>
+
+    <!-- Trámites Section -->
+    <div class="card-custom">
+        <div class="card-header-custom">
+            <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
+                <i class="fas fa-folder-open" style="margin-right: var(--spacing-sm); color: var(--color-primary);"></i>
+                Mis Trámites Actuales
+            </h3>
+        </div>
+        <div class="card-body-custom">
+            {% if tramites %}
+                <div style="overflow-x: auto;">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Estado</th>
+                                <th>Fecha Inicio</th>
+                                <th>Empleado Asignado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tramite in tramites %}
+                            <tr>
+                                <td>
+                                    <strong style="color: var(--color-primary);">#{{ tramite.id }}</strong>
+                                </td>
+                                <td>{{ tramite.nombre }}</td>
+                                <td>
+                                    {% if tramite.estado == 'PENDIENTE' %}
+                                        <span class="badge-custom badge-warning">
+                                            <i class="fas fa-clock"></i>
+                                            <span>{{ tramite.get_estado_display }}</span>
+                                        </span>
+                                    {% elif tramite.estado == 'APROBADO' %}
+                                        <span class="badge-custom badge-success">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>{{ tramite.get_estado_display }}</span>
+                                        </span>
+                                    {% elif tramite.estado == 'RECHAZADO' %}
+                                        <span class="badge-custom badge-danger">
+                                            <i class="fas fa-times-circle"></i>
+                                            <span>{{ tramite.get_estado_display }}</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-custom badge-info">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>{{ tramite.get_estado_display }}</span>
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ tramite.fecha_inicio|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if tramite.empleado_asignado %}
+                                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                            <i class="fas fa-user-tie" style="color: var(--color-primary);"></i>
+                                            <span>{{ tramite.empleado_asignado.nombre }}</span>
+                                        </div>
+                                    {% else %}
+                                        <span style="color: var(--color-text-muted);">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: var(--spacing-2xl) var(--spacing-lg);">
+                    <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--color-border); margin-bottom: var(--spacing-lg);"></i>
+                    <p style="color: var(--color-text-muted); margin: 0;">
+                        Aún no ha iniciado ningún trámite. Cuando lo haga, aparecerán aquí.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const botonesCargar = document.querySelectorAll('.btn-cargar-formulario');
+    const container = document.getElementById('contenido-principal');
+
+    botonesCargar.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            // Remover active de todos
+            botonesCargar.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            const plantillaId = this.getAttribute('data-plantilla-id');
+            const url = `/tramites/generar-formulario/${plantillaId}/`;
+
+            // Loading state
+            container.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 300px;">
+                    <div style="text-align: center;">
+                        <div style="width: 48px; height: 48px; border: 4px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--spacing-lg);"></div>
+                        <p style="color: var(--color-text-muted);">Cargando formulario...</p>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error en la respuesta del servidor.');
+                    return response.json();
+                })
+                .then(data => {
+                    container.innerHTML = `
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
+                                    <i class="fas fa-file-alt" style="margin-right: var(--spacing-sm); color: var(--color-primary);"></i>
+                                    Formulario: ${data.plantilla_nombre}
+                                </h3>
+                            </div>
+                            <div class="card-body-custom">
+                                ${data.form_html}
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error al cargar el formulario:', error);
+                    container.innerHTML = `
+                        <div class="alert-custom alert-custom-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>Ocurrió un error al cargar el formulario. Por favor, inténtelo de nuevo más tarde.</div>
+                        </div>
+                    `;
+                });
+        });
+    });
+});
+</script>
+{% endblock %}

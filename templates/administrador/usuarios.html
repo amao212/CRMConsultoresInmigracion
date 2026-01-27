@@ -1,0 +1,218 @@
+{% extends "administrador/base_admin.html" %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+{% block page_title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<!-- Botón de acción principal -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl);">
+    <a href="{% url 'usuarios:crear-usuario' %}" class="btn-custom btn-primary-custom">
+        <i class="fas fa-user-plus"></i>
+        <span>Crear Nuevo Usuario</span>
+    </a>
+    <a href="{% url 'usuarios:dashboard-admin' %}" class="btn-custom btn-secondary-custom">
+        <i class="fas fa-arrow-left"></i>
+        <span>Volver al Dashboard</span>
+    </a>
+</div>
+
+<!-- Empleados -->
+<div class="card-custom" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header-custom" style="background: var(--color-success-light); border-color: var(--color-success);">
+        <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0; color: var(--color-success);">
+            <i class="fas fa-user-tie" style="margin-right: var(--spacing-sm);"></i>
+            Empleados ({{ empleados.count }})
+        </h3>
+    </div>
+    <div class="card-body-custom">
+        {% if empleados %}
+            <div style="overflow-x: auto;">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for empleado in empleados %}
+                        <tr>
+                            <td><strong style="color: var(--color-primary);">#{{ empleado.id }}</strong></td>
+                            <td>{{ empleado.nombre }}</td>
+                            <td style="color: var(--color-text-secondary);">{{ empleado.email }}</td>
+                            <td>
+                                {% if empleado.is_active %}
+                                    <span class="badge-custom badge-success">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Activo</span>
+                                    </span>
+                                {% else %}
+                                    <span class="badge-custom badge-danger">
+                                        <i class="fas fa-times-circle"></i>
+                                        <span>Inactivo</span>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ empleado.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <div style="display: flex; gap: var(--spacing-sm);">
+                                    <a href="{% url 'usuarios:editar-usuario' empleado.id %}"
+                                       class="btn-custom btn-secondary-custom"
+                                       style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
+                                       title="Editar usuario">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn-custom btn-danger-custom"
+                                            style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
+                                            onclick="showDeleteModal('empleado', {{ empleado.id }}, '{{ empleado.nombre }}')"
+                                            title="Eliminar usuario">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: var(--spacing-2xl) var(--spacing-lg);">
+                <i class="fas fa-user-tie" style="font-size: 3rem; color: var(--color-border); margin-bottom: var(--spacing-lg);"></i>
+                <p style="color: var(--color-text-muted); margin: 0;">
+                    No hay empleados registrados en el sistema.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Administradores -->
+<div class="card-custom">
+    <div class="card-header-custom" style="background: var(--color-warning-light); border-color: var(--color-warning);">
+        <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0; color: var(--color-warning);">
+            <i class="fas fa-user-shield" style="margin-right: var(--spacing-sm);"></i>
+            Administradores ({{ administradores.count }})
+        </h3>
+    </div>
+    <div class="card-body-custom">
+        {% if administradores %}
+            <div style="overflow-x: auto;">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in administradores %}
+                        <tr>
+                            <td><strong style="color: var(--color-primary);">#{{ admin.id }}</strong></td>
+                            <td>{{ admin.nombre }}</td>
+                            <td style="color: var(--color-text-secondary);">{{ admin.email }}</td>
+                            <td>
+                                {% if admin.is_active %}
+                                    <span class="badge-custom badge-success">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Activo</span>
+                                    </span>
+                                {% else %}
+                                    <span class="badge-custom badge-danger">
+                                        <i class="fas fa-times-circle"></i>
+                                        <span>Inactivo</span>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ admin.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <div style="display: flex; gap: var(--spacing-sm);">
+                                    <a href="{% url 'usuarios:editar-usuario' admin.id %}"
+                                       class="btn-custom btn-secondary-custom"
+                                       style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
+                                       title="Editar usuario">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn-custom btn-danger-custom"
+                                            style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
+                                            onclick="showDeleteModal('admin', {{ admin.id }}, '{{ admin.nombre }}')"
+                                            title="Eliminar usuario">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: var(--spacing-2xl) var(--spacing-lg);">
+                <i class="fas fa-user-shield" style="font-size: 3rem; color: var(--color-border); margin-bottom: var(--spacing-lg);"></i>
+                <p style="color: var(--color-text-muted); margin: 0;">
+                    No hay otros administradores registrados.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: var(--color-surface); border-radius: var(--border-radius-lg); padding: var(--spacing-xl); max-width: 500px; width: 90%; box-shadow: var(--shadow-xl);">
+        <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+            <div style="width: 48px; height: 48px; background: var(--color-danger-light); border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: var(--font-size-xl); color: var(--color-danger);"></i>
+            </div>
+            <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
+                Confirmar Eliminación
+            </h3>
+        </div>
+        <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg);">
+            ¿Está seguro de que desea eliminar al usuario <strong id="deleteUserName"></strong>? Esta acción no se puede deshacer.
+        </p>
+        <form method="post" id="deleteForm">
+            {% csrf_token %}
+            <input type="hidden" name="usuario_id" id="deleteUserId">
+            <input type="hidden" name="eliminar" value="1">
+            <div style="display: flex; gap: var(--spacing-md); justify-content: flex-end;">
+                <button type="button" class="btn-custom btn-secondary-custom" onclick="hideDeleteModal()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-custom btn-danger-custom">
+                    <i class="fas fa-trash"></i>
+                    <span>Eliminar Usuario</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showDeleteModal(tipo, id, nombre) {
+    document.getElementById('deleteUserName').textContent = nombre;
+    document.getElementById('deleteUserId').value = id;
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideDeleteModal();
+    }
+});
+</script>
+{% endblock %}

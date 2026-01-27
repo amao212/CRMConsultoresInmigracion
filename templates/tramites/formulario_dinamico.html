@@ -1,0 +1,85 @@
+{% load tramites_extras %}
+
+<form method="post" action="{% if tramite_id %}{% url 'tramites:actualizar_tramite' tramite_id %}{% else %}{% url 'tramites:iniciar_tramite' plantilla.id %}{% endif %}" class="form-section-custom mb-0" style="border: none; padding: 0; box-shadow: none;">
+    {% csrf_token %}
+
+    {% for seccion, campos in campos_por_seccion.items %}
+    <div class="card-custom mb-4" style="border: 1px solid var(--color-border-light); box-shadow: var(--shadow-sm);">
+        <div class="card-header-custom" style="background: var(--color-background-light); border-bottom: 1px solid var(--color-border-light); padding: var(--spacing-md) var(--spacing-lg);">
+            <h5 class="mb-0" style="font-size: var(--font-size-lg); color: var(--color-primary); font-weight: var(--font-weight-semibold);">
+                <i class="fas fa-list-ul me-2" style="font-size: var(--font-size-base); opacity: 0.7;"></i>
+                {{ seccion }}
+            </h5>
+        </div>
+        <div class="card-body-custom" style="padding: var(--spacing-lg);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-lg);">
+                {% for campo in campos %}
+                <div class="form-group-custom mb-0">
+                    <label for="campo_{{ campo.nombre_tecnico }}" class="form-label-custom" style="font-weight: var(--font-weight-medium); color: var(--color-text-primary);">
+                        {{ campo.nombre_campo }}
+                        {% if campo.es_requerido %}
+                            <span style="color: var(--color-danger); margin-left: 2px;">*</span>
+                        {% endif %}
+                    </label>
+
+                    {% with valor_actual=datos_actuales|get_item:campo.nombre_tecnico %}
+                    <div style="position: relative;">
+                        {% if campo.tipo_campo == 'textarea' %}
+                            <textarea class="form-input-custom"
+                                      id="campo_{{ campo.nombre_tecnico }}"
+                                      name="{{ campo.nombre_tecnico }}"
+                                      rows="4"
+                                      placeholder="Ingrese {{ campo.nombre_campo|lower }}..."
+                                      style="resize: vertical; min-height: 100px; line-height: 1.5;"
+                                      {% if campo.es_requerido %}required{% endif %}>{{ valor_actual|default:'' }}</textarea>
+                        {% elif campo.tipo_campo == 'checkbox' %}
+                            <div class="form-check" style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) 0;">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="campo_{{ campo.nombre_tecnico }}"
+                                       name="{{ campo.nombre_tecnico }}"
+                                       value="True"
+                                       style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: var(--color-primary);"
+                                       {% if valor_actual %}checked{% endif %}>
+                                <label for="campo_{{ campo.nombre_tecnico }}" style="margin: 0; cursor: pointer; color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                                    Marcar si corresponde
+                                </label>
+                            </div>
+                        {% else %}
+                            <div style="position: relative;">
+                                {% if campo.tipo_campo == 'date' %}
+                                    <i class="fas fa-calendar-alt" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;"></i>
+                                {% elif campo.tipo_campo == 'email' %}
+                                    <i class="fas fa-envelope" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;"></i>
+                                {% elif campo.tipo_campo == 'number' %}
+                                    <i class="fas fa-hashtag" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;"></i>
+                                {% else %}
+                                    <i class="fas fa-pen" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;"></i>
+                                {% endif %}
+
+                                <input type="{{ campo.tipo_campo }}"
+                                       class="form-input-custom"
+                                       id="campo_{{ campo.nombre_tecnico }}"
+                                       name="{{ campo.nombre_tecnico }}"
+                                       value="{{ valor_actual|default:'' }}"
+                                       placeholder="Ingrese {{ campo.nombre_campo|lower }}..."
+                                       style="padding-left: 2.5rem;"
+                                       {% if campo.es_requerido %}required{% endif %}>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endwith %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-end mt-4 pt-4" style="border-top: 1px solid var(--color-border-light);">
+        <button type="submit" class="btn-custom btn-primary-custom" style="padding: 0.75rem 2rem; font-size: var(--font-size-base);">
+            <i class="fas fa-paper-plane"></i>
+            <span>{% if tramite_id %}Actualizar Trámite{% else %}Iniciar Trámite{% endif %}</span>
+        </button>
+    </div>
+</form>

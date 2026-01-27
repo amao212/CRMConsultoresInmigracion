@@ -1,0 +1,90 @@
+{% extends 'empleado/base_empleado.html' %}
+{% load static %}
+
+{% block title %}Historial General de Cambios{% endblock %}
+{% block page_title %}Historial General de Cambios{% endblock %}
+
+{% block content %}
+<div class="card-custom">
+    <div class="card-header-custom">
+        <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
+            <i class="fas fa-history" style="margin-right: var(--spacing-sm); color: var(--color-primary);"></i>
+            Registro de Actividad
+        </h3>
+    </div>
+    <div class="card-body-custom">
+        {% if historial %}
+            <div style="overflow-x: auto;">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Trámite</th>
+                            <th>Solicitante</th>
+                            <th>Descripción</th>
+                            <th>Usuario</th>
+                            <th>Cambio de Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cambio in historial %}
+                        <tr>
+                            <td style="white-space: nowrap;">
+                                <div style="font-weight: var(--font-weight-medium);">{{ cambio.fecha_cambio|date:"d/m/Y" }}</div>
+                                <div style="font-size: var(--font-size-xs); color: var(--color-text-muted);">{{ cambio.fecha_cambio|date:"H:i" }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: var(--font-weight-medium);">{{ cambio.tramite.nombre }}</div>
+                                <div style="font-size: var(--font-size-xs); color: var(--color-text-muted);">#{{ cambio.tramite.id }}</div>
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                    <div style="width: 24px; height: 24px; background: var(--color-primary-subtle); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--color-primary); font-size: 10px;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);">{{ cambio.tramite.solicitante.nombre }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="max-width: 300px; font-size: var(--font-size-sm);">{{ cambio.descripcion }}</div>
+                            </td>
+                            <td>
+                                <span style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+                                    {{ cambio.usuario.nombre|default:"Sistema" }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if cambio.estado_anterior and cambio.estado_nuevo %}
+                                    <div style="display: flex; align-items: center; gap: 4px; font-size: var(--font-size-xs);">
+                                        <span class="badge-custom badge-outline">{{ cambio.estado_anterior }}</span>
+                                        <i class="fas fa-arrow-right text-muted"></i>
+                                        <span class="badge-custom {% if cambio.estado_nuevo == 'APROBADO' %}badge-success{% elif cambio.estado_nuevo == 'RECHAZADO' %}badge-danger{% else %}badge-info{% endif %}">
+                                            {{ cambio.estado_nuevo }}
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'empleado:detalle-tramite' cambio.tramite.id %}" class="btn-custom btn-secondary-custom btn-sm" title="Ver Trámite">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert-custom alert-custom-info">
+                <i class="fas fa-info-circle"></i>
+                <div>No hay actividad registrada en sus trámites asignados.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

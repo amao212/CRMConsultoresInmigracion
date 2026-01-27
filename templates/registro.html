@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuario - CRM Migratorio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/system_design.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <div class="auth-card">
+                <!-- Header -->
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h1 class="auth-title">Crear Cuenta</h1>
+                    <p class="auth-subtitle">Complete el formulario para registrarse en el sistema</p>
+                </div>
+
+                <!-- Body -->
+                <div class="auth-body">
+                    {% if error %}
+                        <div class="auth-alert auth-alert-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>{{ error }}</span>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" class="auth-form">
+                        {% csrf_token %}
+
+                        <div class="auth-form-group">
+                            <label for="nombre" class="auth-label">
+                                <i class="fas fa-user"></i>
+                                <span>Nombre Completo</span>
+                            </label>
+                            <input
+                                type="text"
+                                class="auth-input"
+                                id="nombre"
+                                name="nombre"
+                                placeholder="Ingrese su nombre completo"
+                                required
+                            >
+                        </div>
+
+                        <div class="auth-form-group">
+                            <label for="email" class="auth-label">
+                                <i class="fas fa-envelope"></i>
+                                <span>Correo Electrónico</span>
+                            </label>
+                            <input
+                                type="email"
+                                class="auth-input"
+                                id="email"
+                                name="email"
+                                placeholder="usuario@ejemplo.com"
+                                required
+                            >
+                        </div>
+
+                        <div class="auth-form-group">
+                            <label for="password" class="auth-label">
+                                <i class="fas fa-lock"></i>
+                                <span>Contraseña</span>
+                            </label>
+                            <input
+                                type="password"
+                                class="auth-input"
+                                id="password"
+                                name="password"
+                                placeholder="Mínimo 8 caracteres"
+                                required
+                            >
+                        </div>
+
+                        <div class="auth-form-group">
+                            <label for="password_confirm" class="auth-label">
+                                <i class="fas fa-lock"></i>
+                                <span>Confirmar Contraseña</span>
+                            </label>
+                            <input
+                                type="password"
+                                class="auth-input"
+                                id="password_confirm"
+                                name="password_confirm"
+                                placeholder="Repita su contraseña"
+                                required
+                            >
+                        </div>
+
+                        <button type="submit" class="auth-button">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Crear Cuenta</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Footer -->
+                <div class="auth-footer">
+                    <p class="auth-footer-text">
+                        ¿Ya tiene una cuenta?
+                        <a href="{% url 'usuarios:login' %}" class="auth-footer-link">Inicie sesión aquí</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
