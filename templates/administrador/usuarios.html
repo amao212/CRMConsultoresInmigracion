@@ -16,16 +16,16 @@
     </a>
 </div>
 
-<!-- Empleados -->
+<!-- Tramitadores -->
 <div class="card-custom" style="margin-bottom: var(--spacing-xl);">
     <div class="card-header-custom" style="background: var(--color-success-light); border-color: var(--color-success);">
         <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0; color: var(--color-success);">
             <i class="fas fa-user-tie" style="margin-right: var(--spacing-sm);"></i>
-            Empleados ({{ empleados.count }})
+            Tramitadores ({{ tramitadores.count }})
         </h3>
     </div>
     <div class="card-body-custom">
-        {% if empleados %}
+        {% if tramitadores %}
             <div style="overflow-x: auto;">
                 <table class="table-custom">
                     <thead>
@@ -39,13 +39,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for empleado in empleados %}
+                        {% for tramitador in tramitadores %}
                         <tr>
-                            <td><strong style="color: var(--color-primary);">#{{ empleado.id }}</strong></td>
-                            <td>{{ empleado.nombre }}</td>
-                            <td style="color: var(--color-text-secondary);">{{ empleado.email }}</td>
+                            <td><strong style="color: var(--color-primary);">#{{ tramitador.id }}</strong></td>
+                            <td>{{ tramitador.nombre }}</td>
+                            <td style="color: var(--color-text-secondary);">{{ tramitador.email }}</td>
                             <td>
-                                {% if empleado.is_active %}
+                                {% if tramitador.is_active %}
                                     <span class="badge-custom badge-success">
                                         <i class="fas fa-check-circle"></i>
                                         <span>Activo</span>
@@ -57,10 +57,10 @@
                                     </span>
                                 {% endif %}
                             </td>
-                            <td>{{ empleado.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td>{{ tramitador.fecha_creacion|date:"d/m/Y H:i" }}</td>
                             <td>
                                 <div style="display: flex; gap: var(--spacing-sm);">
-                                    <a href="{% url 'usuarios:editar-usuario' empleado.id %}"
+                                    <a href="{% url 'usuarios:editar-usuario' tramitador.id %}"
                                        class="btn-custom btn-secondary-custom"
                                        style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
                                        title="Editar usuario">
@@ -69,7 +69,7 @@
                                     <button type="button"
                                             class="btn-custom btn-danger-custom"
                                             style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
-                                            onclick="showDeleteModal('empleado', {{ empleado.id }}, '{{ empleado.nombre }}')"
+                                            onclick="showDeleteModal('tramitador', {{ tramitador.id }}, '{{ tramitador.nombre }}')"
                                             title="Eliminar usuario">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -84,7 +84,7 @@
             <div style="text-align: center; padding: var(--spacing-2xl) var(--spacing-lg);">
                 <i class="fas fa-user-tie" style="font-size: 3rem; color: var(--color-border); margin-bottom: var(--spacing-lg);"></i>
                 <p style="color: var(--color-text-muted); margin: 0;">
-                    No hay empleados registrados en el sistema.
+                    No hay tramitadores registrados en el sistema.
                 </p>
             </div>
         {% endif %}
@@ -180,10 +180,8 @@
         <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg);">
             ¿Está seguro de que desea eliminar al usuario <strong id="deleteUserName"></strong>? Esta acción no se puede deshacer.
         </p>
-        <form method="post" id="deleteForm">
+        <form method="post" id="deleteForm" action="">
             {% csrf_token %}
-            <input type="hidden" name="usuario_id" id="deleteUserId">
-            <input type="hidden" name="eliminar" value="1">
             <div style="display: flex; gap: var(--spacing-md); justify-content: flex-end;">
                 <button type="button" class="btn-custom btn-secondary-custom" onclick="hideDeleteModal()">
                     Cancelar
@@ -199,8 +197,9 @@
 
 <script>
 function showDeleteModal(tipo, id, nombre) {
+    const form = document.getElementById('deleteForm');
+    form.action = `{% url 'usuarios:eliminar-usuario' 0 %}`.replace('0', id);
     document.getElementById('deleteUserName').textContent = nombre;
-    document.getElementById('deleteUserId').value = id;
     document.getElementById('deleteModal').style.display = 'flex';
 }
 

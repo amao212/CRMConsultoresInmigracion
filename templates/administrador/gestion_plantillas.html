@@ -78,24 +78,8 @@
                         </span>
                     </div>
 
-                    <div class="form-group-custom">
-                        <label for="tipo_especifico" class="form-label-custom">
-                            Tipo Específico <span style="color: var(--color-danger);">*</span>
-                        </label>
-                        <div style="position: relative;">
-                            <i class="fas fa-file-alt" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted);"></i>
-                            <input type="text"
-                                   class="form-input-custom"
-                                   style="padding-left: 2.5rem;"
-                                   id="tipo_especifico"
-                                   name="tipo_especifico"
-                                   placeholder="Ej: Visa de Turista"
-                                   required>
-                        </div>
-                        <span style="font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: var(--spacing-xs); display: block;">
-                            Tipo específico del documento.
-                        </span>
-                    </div>
+                    <!-- Campo oculto Tipo Específico (se sincroniza con Nombre) -->
+                    <input type="hidden" id="tipo_especifico" name="tipo_especifico">
                 </div>
             </div>
 
@@ -125,7 +109,6 @@
                         <tr>
                             <th>Nombre</th>
                             <th>Segmento</th>
-                            <th>Tipo</th>
                             <th>Subido por</th>
                             <th>Fecha</th>
                             <th>Acciones</th>
@@ -146,7 +129,6 @@
                                     <span>{{ plantilla.segmento }}</span>
                                 </span>
                             </td>
-                            <td>{{ plantilla.tipo_especifico }}</td>
                             <td style="color: var(--color-text-secondary);">
                                 {{ plantilla.administrador.nombre|default:"N/A" }}
                             </td>
@@ -154,13 +136,13 @@
                             <td>
                                 <div style="display: flex; gap: var(--spacing-sm);">
                                     {% if plantilla.archivo_base %}
-                                        <a href="{{ plantilla.archivo_base.url }}"
+                                        <button type="button"
                                            class="btn-custom btn-secondary-custom"
                                            style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
-                                           target="_blank"
+                                           onclick="showPdfViewer('{{ plantilla.archivo_base.url }}', '{{ plantilla.nombre }}')"
                                            title="Ver PDF">
                                             <i class="fas fa-eye"></i>
-                                        </a>
+                                        </button>
                                         <a href="{{ plantilla.archivo_base.url }}"
                                            class="btn-custom btn-outline-custom"
                                            style="padding: 0.5rem 1rem; font-size: var(--font-size-xs);"
@@ -195,6 +177,23 @@
                 </p>
             </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Visor de PDF embebido -->
+<div id="pdfViewerCard" class="card-custom mt-5" style="display: none;">
+    <div class="card-header-custom d-flex align-items-center justify-content-between">
+        <h3 id="pdfViewerTitle" class="mb-0" style="font-size: var(--font-size-xl);">
+            <i class="fas fa-file-pdf" style="margin-right: var(--spacing-sm); color: var(--color-danger);"></i>
+            <span></span>
+        </h3>
+        <button type="button" class="btn-custom btn-secondary-custom" onclick="hidePdfViewer()">
+            <i class="fas fa-times"></i>
+            <span>Cerrar</span>
+        </button>
+    </div>
+    <div class="card-body-custom" style="padding: 0;">
+        <iframe id="pdfViewerFrame" style="width: 100%; height: 75vh; border: none;"></iframe>
     </div>
 </div>
 
@@ -246,5 +245,40 @@ document.getElementById('deletePlantillaModal').addEventListener('click', functi
         hidePlantillaModal();
     }
 });
+
+// Sincronizar Nombre con Tipo Específico
+document.addEventListener('DOMContentLoaded', function() {
+    const nombreInput = document.getElementById('nombre');
+    const tipoEspecificoInput = document.getElementById('tipo_especifico');
+
+    if (nombreInput && tipoEspecificoInput) {
+        nombreInput.addEventListener('input', function() {
+            tipoEspecificoInput.value = this.value;
+        });
+        tipoEspecificoInput.value = nombreInput.value;
+    }
+});
+
+// --- Funciones del Visor de PDF ---
+function showPdfViewer(pdfUrl, pdfName) {
+    const viewerCard = document.getElementById('pdfViewerCard');
+    const viewerTitle = document.getElementById('pdfViewerTitle').querySelector('span');
+    const viewerFrame = document.getElementById('pdfViewerFrame');
+
+    viewerTitle.textContent = pdfName;
+    viewerFrame.src = pdfUrl;
+    viewerCard.style.display = 'block';
+
+    // Scroll para que el visor sea visible
+    viewerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hidePdfViewer() {
+    const viewerCard = document.getElementById('pdfViewerCard');
+    const viewerFrame = document.getElementById('pdfViewerFrame');
+
+    viewerCard.style.display = 'none';
+    viewerFrame.src = ''; // Detiene la carga del PDF para liberar recursos
+}
 </script>
 {% endblock %}

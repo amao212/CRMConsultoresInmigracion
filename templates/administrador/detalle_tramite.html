@@ -53,12 +53,12 @@
 
                 <div style="margin-bottom: var(--spacing-md);">
                     <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
-                        <strong>Empleado Asignado:</strong>
+                        <strong>Tramitador Asignado:</strong>
                     </p>
-                    {% if tramite.empleado_asignado %}
+                    {% if tramite.tramitador_asignado %}
                         <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
                             <i class="fas fa-user-tie" style="color: var(--color-success);"></i>
-                            <span>{{ tramite.empleado_asignado.nombre }}</span>
+                            <span>{{ tramite.tramitador_asignado.nombre }}</span>
                         </div>
                     {% else %}
                         <span style="color: var(--color-text-muted); font-style: italic;">Sin asignar</span>

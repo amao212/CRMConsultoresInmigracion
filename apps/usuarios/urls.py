@@ -2,7 +2,7 @@ from django.urls import path
 from .views_roles.login_view import LoginView, LogoutView
 from .views_roles.admin_view import (
     AdminDashboardView,
-    GestionEmpleadosView,
+    GestionTramitadoresView,
     CrearUsuarioView,
     EditarUsuarioView,
     EliminarUsuarioView,
@@ -11,7 +11,7 @@ from .views_roles.admin_view import (
     DetalleTramiteAdminView,
     VisualizarPDFAdminView
 )
-from .views_roles.empleado_view import EmpleadoDashboardView
+from .views_roles.tramitador_view import TramitadorDashboardView
 from .views_roles.registro_view import RegistroView
 from .views_roles.solicitante_view import SolicitanteDashboardView
 
@@ -25,11 +25,11 @@ urlpatterns = [
 
     # --- Dashboards por Rol ---
     path('dashboard-admin/', AdminDashboardView.as_view(), name='dashboard-admin'),
-    path('dashboard-empleado/', EmpleadoDashboardView.as_view(), name='dashboard-empleado'),
+    path('dashboard-tramitador/', TramitadorDashboardView.as_view(), name='dashboard-tramitador'),
     path('dashboard-solicitante/', SolicitanteDashboardView.as_view(), name='dashboard-solicitante'),
 
     # --- Gestión de Administrador ---
-    path('gestion-empleados/', GestionEmpleadosView.as_view(), name='gestion-empleados'),
+    path('gestion-tramitadores/', GestionTramitadoresView.as_view(), name='gestion-tramitadores'),
     path('crear-usuario/', CrearUsuarioView.as_view(), name='crear-usuario'),
     path('editar-usuario/<int:usuario_id>/', EditarUsuarioView.as_view(), name='editar-usuario'),
     path('eliminar-usuario/<int:usuario_id>/', EliminarUsuarioView.as_view(), name='eliminar-usuario'),

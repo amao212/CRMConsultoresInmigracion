@@ -1,5 +1,5 @@
 """
-Servicio para asignar empleados a trámites de manera automática.
+Servicio para asignar tramitadores a trámites de manera automática.
 Usa algoritmo round-robin para distribuir equitativamente la carga de trabajo.
 """
 from django.db.models import Count, Q
@@ -11,21 +11,21 @@ from apps.tramites.models import Tramite, UltimaAsignacion
 Usuario = get_user_model()
 
 
-class AsignacionEmpleadoService:
+class AsignacionTramitadorService:
     """
-    Servicio para asignar empleados a trámites automáticamente.
+    Servicio para asignar tramitadores a trámites automáticamente.
     """
 
     @staticmethod
-    def obtener_empleado_disponible():
+    def obtener_tramitador_disponible():
         """
-        Obtiene el siguiente empleado disponible usando un algoritmo Round-Robin (circular).
+        Obtiene el siguiente tramitador disponible usando un algoritmo Round-Robin (circular).
         Garantiza una distribución equitativa y consistente.
         
-        El ciclo es: Empleado1 -> Empleado2 -> ... -> EmpleadoN -> Empleado1
+        El ciclo es: Tramitador1 -> Tramitador2 -> ... -> TramitadorN -> Tramitador1
 
         Returns:
-            Usuario (empleado) seleccionado, o None si no hay empleados
+            Usuario (tramitador) seleccionado, o None si no hay tramitadores
         """
         try:
             with transaction.atomic():
@@ -33,102 +33,102 @@ class AsignacionEmpleadoService:
                 # Usamos id=1 ya que solo necesitamos un registro global
                 registro_asignacion, created = UltimaAsignacion.objects.select_for_update().get_or_create(id=1)
                 
-                ultimo_id = registro_asignacion.ultimo_empleado_id
+                ultimo_id = registro_asignacion.ultimo_tramitador_id
 
-                # Obtener todos los empleados activos ordenados por ID para garantizar orden consistente
-                empleados = Usuario.objects.filter(
-                    rol='EMPLEADO',
+                # Obtener todos los tramitadores activos ordenados por ID para garantizar orden consistente
+                tramitadores = Usuario.objects.filter(
+                    rol='TRAMITADOR',
                     is_active=True
                 ).order_by('id')
 
-                if not empleados.exists():
-                    print("⚠️ No hay empleados disponibles para asignar")
+                if not tramitadores.exists():
+                    print("⚠️ No hay tramitadores disponibles para asignar")
                     return None
 
-                empleado_seleccionado = None
+                tramitador_seleccionado = None
 
                 if ultimo_id:
-                    # Buscar el siguiente empleado con ID mayor al último asignado
+                    # Buscar el siguiente tramitador con ID mayor al último asignado
                     # Esto encuentra al "siguiente" en la lista ordenada
-                    empleado_seleccionado = empleados.filter(id__gt=ultimo_id).first()
+                    tramitador_seleccionado = tramitadores.filter(id__gt=ultimo_id).first()
 
                 # Si no hay siguiente (llegamos al final de la lista) o no había último ID (primera vez),
                 # volvemos al principio del ciclo (Round-Robin)
-                if not empleado_seleccionado:
-                    empleado_seleccionado = empleados.first()
+                if not tramitador_seleccionado:
+                    tramitador_seleccionado = tramitadores.first()
 
                 # Actualizar el registro de última asignación
-                if empleado_seleccionado:
-                    registro_asignacion.ultimo_empleado_id = empleado_seleccionado.id
+                if tramitador_seleccionado:
+                    registro_asignacion.ultimo_tramitador_id = tramitador_seleccionado.id
                     registro_asignacion.save()
-                    print(f"✅ Empleado asignado (Round-Robin): {empleado_seleccionado.email} (ID: {empleado_seleccionado.id})")
-                    return empleado_seleccionado
+                    print(f"✅ Tramitador asignado (Round-Robin): {tramitador_seleccionado.email} (ID: {tramitador_seleccionado.id})")
+                    return tramitador_seleccionado
                 
                 return None
         except Exception as e:
             print(f"❌ Error en algoritmo de asignación: {e}")
             # Fallback: intentar obtener el primero disponible sin bloqueo si falla la transacción
-            return Usuario.objects.filter(rol='EMPLEADO', is_active=True).first()
+            return Usuario.objects.filter(rol='TRAMITADOR', is_active=True).first()
 
     @staticmethod
-    def asignar_empleado_a_tramite(tramite: Tramite) -> bool:
+    def asignar_tramitador_a_tramite(tramite: Tramite) -> bool:
         """
-        Asigna un empleado disponible a un trámite de forma automática.
+        Asigna un tramitador disponible a un trámite de forma automática.
 
         Args:
-            tramite: Trámite al que se le asignará un empleado
+            tramite: Trámite al que se le asignará un tramitador
 
         Returns:
-            True si se asignó exitosamente, False si no hay empleados disponibles
+            True si se asignó exitosamente, False si no hay tramitadores disponibles
         """
-        if tramite.empleado_asignado:
-            print(f"⚠️ El trámite #{tramite.id} ya tiene empleado asignado: {tramite.empleado_asignado.email}")
+        if tramite.tramitador_asignado:
+            print(f"⚠️ El trámite #{tramite.id} ya tiene tramitador asignado: {tramite.tramitador_asignado.email}")
             return True
 
-        empleado = AsignacionEmpleadoService.obtener_empleado_disponible()
+        tramitador = AsignacionTramitadorService.obtener_tramitador_disponible()
 
-        if empleado:
-            tramite.empleado_asignado = empleado
-            tramite.save(update_fields=['empleado_asignado'])
-            print(f"✅ Trámite #{tramite.id} asignado a empleado {empleado.email}")
+        if tramitador:
+            tramite.tramitador_asignado = tramitador
+            tramite.save(update_fields=['tramitador_asignado'])
+            print(f"✅ Trámite #{tramite.id} asignado a tramitador {tramitador.email}")
             return True
         else:
-            print(f"❌ No se pudo asignar empleado al trámite #{tramite.id}")
+            print(f"❌ No se pudo asignar tramitador al trámite #{tramite.id}")
             return False
 
     @staticmethod
-    def reasignar_empleado_a_tramite(tramite: Tramite, nuevo_empleado: Usuario) -> bool:
+    def reasignar_tramitador_a_tramite(tramite: Tramite, nuevo_tramitador: Usuario) -> bool:
         """
-        Reasigna un trámite a un empleado específico.
+        Reasigna un trámite a un tramitador específico.
         Solo puede ser usado por administradores.
 
         Args:
             tramite: Trámite a reasignar
-            nuevo_empleado: Nuevo empleado a asignar
+            nuevo_tramitador: Nuevo tramitador a asignar
 
         Returns:
             True si se reasignó exitosamente
         """
-        if nuevo_empleado.rol != 'EMPLEADO':
-            raise ValueError(f"El usuario {nuevo_empleado.email} no es un empleado")
+        if nuevo_tramitador.rol != 'TRAMITADOR':
+            raise ValueError(f"El usuario {nuevo_tramitador.email} no es un tramitador")
 
-        empleado_anterior = tramite.empleado_asignado
-        tramite.empleado_asignado = nuevo_empleado
-        tramite.save(update_fields=['empleado_asignado'])
+        tramitador_anterior = tramite.tramitador_asignado
+        tramite.tramitador_asignado = nuevo_tramitador
+        tramite.save(update_fields=['tramitador_asignado'])
 
-        print(f"✅ Trámite #{tramite.id} reasignado de {empleado_anterior} a {nuevo_empleado.email}")
+        print(f"✅ Trámite #{tramite.id} reasignado de {tramitador_anterior} a {nuevo_tramitador.email}")
         return True
 
     @staticmethod
-    def obtener_estadisticas_empleados():
+    def obtener_estadisticas_tramitadores():
         """
-        Obtiene estadísticas de carga de trabajo de todos los empleados.
+        Obtiene estadísticas de carga de trabajo de todos los tramitadores.
 
         Returns:
-            QuerySet con estadísticas de cada empleado
+            QuerySet con estadísticas de cada tramitador
         """
-        empleados_stats = Usuario.objects.filter(
-            rol='EMPLEADO',
+        tramitadores_stats = Usuario.objects.filter(
+            rol='TRAMITADOR',
             is_active=True
         ).annotate(
             total_tramites=Count('tramites_asignados'),
@@ -154,4 +154,4 @@ class AsignacionEmpleadoService:
             )
         ).order_by('-total_tramites')
 
-        return empleados_stats
+        return tramitadores_stats

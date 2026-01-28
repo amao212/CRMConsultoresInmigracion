@@ -33,7 +33,7 @@ class UsuarioCRM(AbstractBaseUser, PermissionsMixin):
     """
     ROL_CHOICES = (
         ('ADMINISTRADOR', 'Administrador'),
-        ('EMPLEADO', 'Empleado'),
+        ('TRAMITADOR', 'Tramitador'),
         ('SOLICITANTE', 'Solicitante'),
     )
 

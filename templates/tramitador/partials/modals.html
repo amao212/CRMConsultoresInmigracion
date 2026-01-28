@@ -1,0 +1,58 @@
+<!-- Modal de Confirmación de Aprobación -->
+<div id="approveModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: var(--color-surface); border-radius: var(--border-radius-lg); padding: var(--spacing-xl); max-width: 500px; width: 90%; box-shadow: var(--shadow-xl); animation: fadeIn 0.3s ease-out;">
+        <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+            <div style="width: 48px; height: 48px; background: var(--color-success-light); border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-check-circle" style="font-size: var(--font-size-xl); color: var(--color-success);"></i>
+            </div>
+            <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
+                Confirmar Aprobación
+            </h3>
+        </div>
+        <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg); line-height: 1.6;">
+            ¿Está seguro de que desea <strong>APROBAR</strong> este trámite? Esta acción notificará al solicitante y cambiará el estado del trámite a finalizado.
+        </p>
+        <div style="display: flex; gap: var(--spacing-md); justify-content: flex-end;">
+            <button type="button" class="btn-custom btn-secondary-custom" onclick="hideApproveModal()">
+                Cancelar
+            </button>
+            <button type="button" class="btn-custom btn-success-custom" onclick="submitApproveForm()">
+                <i class="fas fa-check"></i>
+                <span>Confirmar Aprobación</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Rechazo -->
+<div id="rejectModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: var(--color-surface); border-radius: var(--border-radius-lg); padding: var(--spacing-xl); max-width: 500px; width: 90%; box-shadow: var(--shadow-xl); animation: fadeIn 0.3s ease-out;">
+        <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+            <div style="width: 48px; height: 48px; background: var(--color-danger-light); border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: var(--font-size-xl); color: var(--color-danger);"></i>
+            </div>
+            <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
+                Confirmar Rechazo
+            </h3>
+        </div>
+        <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg); line-height: 1.6;">
+            ¿Está seguro de que desea <strong>RECHAZAR</strong> este trámite? Esta acción es irreversible y se enviará el motivo especificado al solicitante.
+        </p>
+        <div style="display: flex; gap: var(--spacing-md); justify-content: flex-end;">
+            <button type="button" class="btn-custom btn-secondary-custom" onclick="hideRejectModal()">
+                Cancelar
+            </button>
+            <button type="button" class="btn-custom btn-danger-custom" onclick="submitRejectForm()">
+                <i class="fas fa-times-circle"></i>
+                <span>Confirmar Rechazo</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

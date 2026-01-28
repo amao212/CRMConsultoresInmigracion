@@ -9,7 +9,7 @@ from django.db import transaction
 import PyPDF2
 from apps.tramites.models import Tramite, Documento, PlantillaDocumento
 from .tramite_data_service import TramiteDataService
-from .asignacion_service import AsignacionEmpleadoService
+from .asignacion_service import AsignacionTramitadorService
 from .storage_service import _generar_ruta_archivo
 
 
@@ -187,7 +187,7 @@ def _generar_pdf_simple_fallback(plantilla: PlantillaDocumento, form_data: dict)
 def iniciar_nuevo_tramite(solicitante, plantilla: PlantillaDocumento, form_data: dict):
     """
     Orquesta la creación de un nuevo trámite, su documento PDF inicial y las entradas en la BD.
-    ASIGNA AUTOMÁTICAMENTE un empleado disponible al trámite.
+    ASIGNA AUTOMÁTICAMENTE un tramitador disponible al trámite.
 
     Estructura de carpetas:
     media/solicitante/solicitante_0001/[segmento]/[tipo_tramite]_v1.pdf
@@ -225,12 +225,12 @@ def iniciar_nuevo_tramite(solicitante, plantilla: PlantillaDocumento, form_data:
     print(f"✅ Trámite #{tramite.id} creado para solicitante #{solicitante.id}")
     print(f"📋 Datos guardados: {len(datos_limpios)} campos")
 
-    # 3. ASIGNAR EMPLEADO AUTOMÁTICAMENTE (NUEVO)
-    asignado = AsignacionEmpleadoService.asignar_empleado_a_tramite(tramite)
+    # 3. ASIGNAR TRAMITADOR AUTOMÁTICAMENTE (NUEVO)
+    asignado = AsignacionTramitadorService.asignar_tramitador_a_tramite(tramite)
     if asignado:
-        print(f"👤 Empleado asignado: {tramite.empleado_asignado.email}")
+        print(f"👤 Tramitador asignado: {tramite.tramitador_asignado.email}")
     else:
-        print("⚠️ No se pudo asignar empleado (no hay empleados disponibles)")
+        print("⚠️ No se pudo asignar tramitador (no hay tramitadores disponibles)")
 
     # 4. Rellenar el PDF de la plantilla con los datos del formulario
     pdf_buffer = _rellenar_pdf_plantilla(plantilla, datos_limpios)

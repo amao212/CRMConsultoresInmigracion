@@ -37,7 +37,7 @@
             </div>
             <div>
                 <p><strong>ID Referencia:</strong> #{{ tramite.id }}</p>
-                <p><strong>Empleado Asignado:</strong> {{ tramite.empleado_asignado.nombre|default:"Sin asignar" }}</p>
+                <p><strong>Tramitador Asignado:</strong> {{ tramite.tramitador_asignado.nombre|default:"Sin asignar" }}</p>
                 <p><strong>Fecha Límite:</strong> {{ tramite.fecha_limite|date:"d/m/Y" }}</p>
             </div>
         </div>

@@ -16,8 +16,8 @@ urlpatterns = [
     # The 'tramites' app is included but has no URLs yet.
     # This makes the structure ready for future development.
     path('tramites/', include('apps.tramites.urls', namespace='tramites')),
-    # URLs for employee functionality
-    path('empleado/', include('apps.tramites.urls_empleado', namespace='empleado')),
+    # URLs for tramitador functionality
+    path('tramitador/', include('apps.tramites.urls_tramitador', namespace='tramitador')),
 ]
 
 # --- Development Server Static and Media File Serving ---

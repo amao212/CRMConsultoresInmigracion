@@ -40,8 +40,8 @@
             <i class="fas fa-user-tie"></i>
         </div>
         <div class="stat-content">
-            <div class="stat-label">Empleados</div>
-            <div class="stat-value">{{ total_empleados }}</div>
+            <div class="stat-label">Tramitadores</div>
+            <div class="stat-value">{{ total_tramitadores }}</div>
         </div>
     </div>
 
@@ -69,11 +69,11 @@
                         Gestión de Usuarios
                     </h3>
                     <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin: 0;">
-                        Administre los roles y accesos de empleados y administradores.
+                        Administre los roles y accesos de tramitadores y administradores.
                     </p>
                 </div>
             </div>
-            <a href="{% url 'usuarios:gestion-empleados' %}" class="btn-custom btn-primary-custom" style="width: 100%;">
+            <a href="{% url 'usuarios:gestion-tramitadores' %}" class="btn-custom btn-primary-custom" style="width: 100%;">
                 <i class="fas fa-cog"></i>
                 <span>Gestionar Usuarios</span>
             </a>

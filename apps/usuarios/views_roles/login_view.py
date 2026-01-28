@@ -32,8 +32,8 @@ class LoginView(View):
         """Redirige al usuario según su rol después de un inicio de sesión exitoso."""
         if user.rol == 'ADMINISTRADOR':
             return redirect(reverse('usuarios:dashboard-admin'))
-        elif user.rol == 'EMPLEADO':
-            return redirect(reverse('empleado:dashboard'))  # Nueva vista con trámites asignados
+        elif user.rol == 'TRAMITADOR':
+            return redirect(reverse('tramitador:dashboard'))  # Nueva vista con trámites asignados
         elif user.rol == 'SOLICITANTE':
             return redirect(reverse('usuarios:dashboard-solicitante'))
         

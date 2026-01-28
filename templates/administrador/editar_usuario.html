@@ -16,7 +16,7 @@
                 Modifique los datos del usuario seleccionado.
             </p>
         </div>
-        <a href="{% url 'usuarios:gestion-empleados' %}" class="btn-custom btn-secondary-custom">
+        <a href="{% url 'usuarios:gestion-tramitadores' %}" class="btn-custom btn-secondary-custom">
             <i class="fas fa-arrow-left"></i>
             <span>Volver al listado</span>
         </a>
@@ -66,7 +66,7 @@
                                                 id="rol"
                                                 name="rol"
                                                 required>
-                                            <option value="EMPLEADO" {% if usuario_editar.rol == 'EMPLEADO' %}selected{% endif %}>Empleado</option>
+                                            <option value="TRAMITADOR" {% if usuario_editar.rol == 'TRAMITADOR' %}selected{% endif %}>Tramitador</option>
                                             <option value="ADMINISTRADOR" {% if usuario_editar.rol == 'ADMINISTRADOR' %}selected{% endif %}>Administrador</option>
                                         </select>
                                         <i class="fas fa-chevron-down" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;"></i>
@@ -162,7 +162,7 @@
 
                         <!-- Botones de Acción -->
                         <div class="d-flex justify-content-end gap-3 pt-4" style="border-top: 1px solid var(--color-border-light);">
-                            <a href="{% url 'usuarios:gestion-empleados' %}" class="btn-custom btn-secondary-custom">
+                            <a href="{% url 'usuarios:gestion-tramitadores' %}" class="btn-custom btn-secondary-custom">
                                 Cancelar
                             </a>
                             <button type="submit" class="btn-custom btn-primary-custom">

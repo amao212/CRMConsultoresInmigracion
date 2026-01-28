@@ -7,8 +7,8 @@ TAREAS_POR_TRAMITE = {
 }
 
 def asignar_tareas_automaticamente(tramite):
-    empleado_disponible = Usuario.objects.filter(rol='EMPLEADO').first() # Simulación simple
-    if not empleado_disponible:
+    tramitador_disponible = Usuario.objects.filter(rol='TRAMITADOR').first() # Simulación simple
+    if not tramitador_disponible:
         return
 
     tareas_a_crear = TAREAS_POR_TRAMITE.get(tramite.nombre, [])
@@ -16,12 +16,12 @@ def asignar_tareas_automaticamente(tramite):
         Tarea.objects.create(
             tramite=tramite,
             nombre=nombre_tarea,
-            asignado_a=empleado_disponible
+            asignado_a=tramitador_disponible
         )
 
-    # Notificar al empleado
+    # Notificar al tramitador
     Notificacion.objects.create(
-        destinatario=empleado_disponible,
+        destinatario=tramitador_disponible,
         mensaje=f"Se te han asignado nuevas tareas para el trámite '{tramite.nombre}'."
     )
     # Notificar vencimiento (simulado)
@@ -35,10 +35,10 @@ def reprogramar_cita(cita):
     cita.save()
 
     # Lógica para liberar el horario en la agenda (simulado)
-    print(f"Horario de {cita.fecha_hora} liberado para el empleado {cita.empleado.email}")
+    print(f"Horario de {cita.fecha_hora} liberado para el tramitador {cita.tramitador.email}")
 
-    # Notificar al empleado
+    # Notificar al tramitador
     Notificacion.objects.create(
-        destinatario=cita.empleado,
+        destinatario=cita.tramitador,
         mensaje=f"La cita para el trámite '{cita.tramite.nombre}' del {cita.fecha_hora.strftime('%d/%m/%Y a las %H:%M')} ha sido cancelada."
     )

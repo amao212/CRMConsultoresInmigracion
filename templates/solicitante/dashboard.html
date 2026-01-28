@@ -65,7 +65,7 @@
                                 <th>Nombre</th>
                                 <th>Estado</th>
                                 <th>Fecha Inicio</th>
-                                <th>Empleado Asignado</th>
+                                <th>Tramitador Asignado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -101,10 +101,10 @@
                                 </td>
                                 <td>{{ tramite.fecha_inicio|date:"d/m/Y H:i" }}</td>
                                 <td>
-                                    {% if tramite.empleado_asignado %}
+                                    {% if tramite.tramitador_asignado %}
                                         <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
                                             <i class="fas fa-user-tie" style="color: var(--color-primary);"></i>
-                                            <span>{{ tramite.empleado_asignado.nombre }}</span>
+                                            <span>{{ tramite.tramitador_asignado.nombre }}</span>
                                         </div>
                                     {% else %}
                                         <span style="color: var(--color-text-muted);">Sin asignar</span>
@@ -148,7 +148,7 @@
                                 <th>Nombre</th>
                                 <th>Estado</th>
                                 <th>Fecha Inicio</th>
-                                <th>Empleado Asignado</th>
+                                <th>Tramitador Asignado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -184,10 +184,10 @@
                                 </td>
                                 <td>{{ tramite.fecha_inicio|date:"d/m/Y H:i" }}</td>
                                 <td>
-                                    {% if tramite.empleado_asignado %}
+                                    {% if tramite.tramitador_asignado %}
                                         <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
                                             <i class="fas fa-user-tie" style="color: var(--color-text-secondary);"></i>
-                                            <span>{{ tramite.empleado_asignado.nombre }}</span>
+                                            <span>{{ tramite.tramitador_asignado.nombre }}</span>
                                         </div>
                                     {% else %}
                                         <span style="color: var(--color-text-muted);">Sin asignar</span>

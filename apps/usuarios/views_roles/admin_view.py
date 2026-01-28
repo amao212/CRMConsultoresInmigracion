@@ -23,34 +23,34 @@ class AdminDashboardView(LoginRequiredMixin, View):
 
         # Estadísticas del dashboard
         total_usuarios = UsuarioCRM.objects.count()
-        total_empleados = UsuarioCRM.objects.filter(rol='EMPLEADO').count()
+        total_tramitadores = UsuarioCRM.objects.filter(rol='TRAMITADOR').count()
         total_administradores = UsuarioCRM.objects.filter(rol='ADMINISTRADOR').count()
 
         context = {
             'user': request.user,
             'total_usuarios': total_usuarios,
-            'total_empleados': total_empleados,
+            'total_tramitadores': total_tramitadores,
             'total_administradores': total_administradores,
         }
         return render(request, 'administrador/dashboard.html', context)
 
 
 @method_decorator(never_cache, name='dispatch')
-class GestionEmpleadosView(LoginRequiredMixin, View):
+class GestionTramitadoresView(LoginRequiredMixin, View):
     """
-    Vista para gestionar empleados y administradores (CRUD completo).
+    Vista para gestionar tramitadores y administradores (CRUD completo).
     """
     def get(self, request):
         if request.user.rol != 'ADMINISTRADOR':
             return redirect('usuarios:login')
 
-        # Obtener empleados y administradores (excluyendo al usuario actual)
-        empleados = UsuarioCRM.objects.filter(rol='EMPLEADO').order_by('-fecha_creacion')
+        # Obtener tramitadores y administradores (excluyendo al usuario actual)
+        tramitadores = UsuarioCRM.objects.filter(rol='TRAMITADOR').order_by('-fecha_creacion')
         administradores = UsuarioCRM.objects.filter(rol='ADMINISTRADOR').exclude(id=request.user.id).order_by('-fecha_creacion')
 
         context = {
             'user': request.user,
-            'empleados': empleados,
+            'tramitadores': tramitadores,
             'administradores': administradores,
         }
         return render(request, 'administrador/usuarios.html', context)
@@ -59,7 +59,7 @@ class GestionEmpleadosView(LoginRequiredMixin, View):
 @method_decorator(never_cache, name='dispatch')
 class CrearUsuarioView(LoginRequiredMixin, View):
     """
-    Vista para crear nuevos usuarios (empleados o solicitantes).
+    Vista para crear nuevos usuarios (tramitadores o solicitantes).
     """
     def get(self, request):
         if request.user.rol != 'ADMINISTRADOR':
@@ -97,7 +97,7 @@ class CrearUsuarioView(LoginRequiredMixin, View):
             )
 
             messages.success(request, f'Usuario {nombre} creado exitosamente.')
-            return redirect('usuarios:gestion-empleados')
+            return redirect('usuarios:gestion-tramitadores')
 
         except Exception as e:
             messages.error(request, f'Error al crear usuario: {str(e)}')
@@ -118,7 +118,7 @@ class EditarUsuarioView(LoginRequiredMixin, View):
         # No permitir que el admin se edite a sí mismo aquí
         if usuario.id == request.user.id:
             messages.warning(request, 'No puedes editarte a ti mismo desde aquí.')
-            return redirect('usuarios:gestion-empleados')
+            return redirect('usuarios:gestion-tramitadores')
 
         context = {
             'user': request.user,
@@ -157,7 +157,7 @@ class EditarUsuarioView(LoginRequiredMixin, View):
             usuario.save()
 
             messages.success(request, f'Usuario {nombre} actualizado exitosamente.')
-            return redirect('usuarios:gestion-empleados')
+            return redirect('usuarios:gestion-tramitadores')
 
         except Exception as e:
             messages.error(request, f'Error al actualizar usuario: {str(e)}')
@@ -179,7 +179,7 @@ class EliminarUsuarioView(LoginRequiredMixin, View):
             # No permitir que el admin se elimine a sí mismo
             if usuario.id == request.user.id:
                 messages.error(request, 'No puedes eliminarte a ti mismo.')
-                return redirect('usuarios:gestion-empleados')
+                return redirect('usuarios:gestion-tramitadores')
 
             nombre = usuario.nombre
             usuario.delete()
@@ -189,7 +189,7 @@ class EliminarUsuarioView(LoginRequiredMixin, View):
         except Exception as e:
             messages.error(request, f'Error al eliminar usuario: {str(e)}')
 
-        return redirect('usuarios:gestion-empleados')
+        return redirect('usuarios:gestion-tramitadores')
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -251,7 +251,7 @@ class GestionTramitesAdminView(LoginRequiredMixin, View):
             return redirect('usuarios:login')
 
         tramites = Tramite.objects.select_related(
-            'solicitante', 'empleado_asignado'
+            'solicitante', 'tramitador_asignado'
         ).order_by('-fecha_inicio')
 
         context = {
@@ -271,7 +271,7 @@ class DetalleTramiteAdminView(LoginRequiredMixin, View):
             return redirect('usuarios:login')
 
         tramite = get_object_or_404(
-            Tramite.objects.select_related('solicitante', 'empleado_asignado'),
+            Tramite.objects.select_related('solicitante', 'tramitador_asignado'),
             id=tramite_id
         )
 

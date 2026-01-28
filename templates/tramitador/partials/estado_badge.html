@@ -1,0 +1,15 @@
+{% if estado == 'PENDIENTE' %}
+    <span class="badge-custom badge-warning">
+        <i class="fas fa-hourglass-half"></i> Pendiente de Aprobación
+    </span>
+{% elif estado == 'APROBADO' %}
+    <span class="badge-custom badge-success">
+        <i class="fas fa-check-circle"></i> Aprobado
+    </span>
+{% elif estado == 'RECHAZADO' %}
+    <span class="badge-custom badge-danger">
+        <i class="fas fa-times-circle"></i> Rechazado
+    </span>
+{% else %}
+    <span class="badge-custom badge-info">{{ estado }}</span>
+{% endif %}

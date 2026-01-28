@@ -21,7 +21,7 @@
                             <th style="width: 8%;">ID</th>
                             <th style="width: 20%;">Nombre</th>
                             <th style="width: 18%;">Solicitante</th>
-                            <th style="width: 18%;">Empleado</th>
+                            <th style="width: 18%;">Tramitador</th>
                             <th style="width: 12%;">Estado</th>
                             <th style="width: 12%;">Fecha Inicio</th>
                             <th style="width: 12%;">Acciones</th>
@@ -39,10 +39,10 @@
                                 </div>
                             </td>
                             <td>
-                                {% if tramite.empleado_asignado %}
+                                {% if tramite.tramitador_asignado %}
                                     <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
                                         <i class="fas fa-user-tie" style="color: var(--color-success);"></i>
-                                        <span>{{ tramite.empleado_asignado.nombre }}</span>
+                                        <span>{{ tramite.tramitador_asignado.nombre }}</span>
                                     </div>
                                 {% else %}
                                     <span style="color: var(--color-text-muted); font-style: italic;">Sin asignar</span>

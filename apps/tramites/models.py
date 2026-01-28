@@ -41,13 +41,22 @@ def documento_upload_to(instance, filename):
 class Tramite(models.Model):
     ESTADOS = (('PENDIENTE', 'Pendiente de Aprobación'), ('APROBADO', 'Aprobado'), ('RECHAZADO', 'Rechazado'), ('EN_PROCESO', 'En Proceso'), ('COMPLETADO', 'Completado'), ('RETRASADO', 'Retrasado'))
     solicitante = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tramites')
-    empleado_asignado = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='tramites_asignados', limit_choices_to={'rol': 'EMPLEADO'}, help_text="Empleado asignado automáticamente para revisar el trámite")
+    tramitador_asignado = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='tramites_asignados', 
+        limit_choices_to={'rol': 'TRAMITADOR'}, 
+        help_text="Tramitador asignado automáticamente para revisar el trámite",
+        db_column='empleado_asignado_id' # Mapeo a la columna existente
+    )
     nombre = models.CharField(max_length=100)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
     fecha_inicio = models.DateTimeField(auto_now_add=True)
     fecha_limite = models.DateTimeField()
-    fecha_aprobacion = models.DateTimeField(null=True, blank=True, help_text="Fecha en que el empleado aprobó el trámite")
-    fecha_rechazo = models.DateTimeField(null=True, blank=True, help_text="Fecha en que el empleado rechazó el trámite")
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True, help_text="Fecha en que el tramitador aprobó el trámite")
+    fecha_rechazo = models.DateTimeField(null=True, blank=True, help_text="Fecha en que el tramitador rechazó el trámite")
     motivo_rechazo = models.TextField(blank=True, null=True, help_text="Razón del rechazo del trámite")
     datos_formulario = models.JSONField(default=dict, blank=True, help_text="Datos dinámicos del formulario del trámite")
     def __str__(self): return self.nombre
@@ -88,7 +97,12 @@ class HistorialCambios(models.Model):
 
 class Cita(models.Model):
     tramite = models.ForeignKey(Tramite, on_delete=models.CASCADE, related_name='citas')
-    empleado = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='citas_empleado')
+    tramitador = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='citas_tramitador',
+        db_column='empleado_id' # Mapeo a la columna existente
+    )
     fecha_hora = models.DateTimeField()
     cancelada = models.BooleanField(default=False)
     def __str__(self): return f"Cita para {self.tramite.nombre} el {self.fecha_hora}"
@@ -136,10 +150,15 @@ class CampoPlantilla(models.Model):
 
 class UltimaAsignacion(models.Model):
     """
-    Modelo para rastrear el último empleado asignado y facilitar el algoritmo Round-Robin.
+    Modelo para rastrear el último tramitador asignado y facilitar el algoritmo Round-Robin.
     Solo debería haber un registro en esta tabla.
     """
-    ultimo_empleado_id = models.IntegerField(null=True, blank=True, help_text="ID del último empleado asignado")
+    ultimo_tramitador_id = models.IntegerField(
+        null=True, 
+        blank=True, 
+        help_text="ID del último tramitador asignado",
+        db_column='ultimo_empleado_id' # Mapeo a la columna existente
+    )
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:
