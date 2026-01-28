@@ -1,8 +1,11 @@
 import io
+import os
 from datetime import timedelta
 from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
+from django.db import transaction
 import PyPDF2
 from apps.tramites.models import Tramite, Documento, PlantillaDocumento
 from .tramite_data_service import TramiteDataService
@@ -200,7 +203,11 @@ def iniciar_nuevo_tramite(solicitante, plantilla: PlantillaDocumento, form_data:
         Tramite creado
     """
     # 1. Validar y limpiar datos del formulario
-    datos_limpios = TramiteDataService.validar_datos_formulario(form_data, plantilla)
+    # Si form_data está vacío (flujo de subida de PDF), no validamos campos requeridos
+    if form_data:
+        datos_limpios = TramiteDataService.validar_datos_formulario(form_data, plantilla)
+    else:
+        datos_limpios = {}
 
     # 2. Crear el Trámite en la base de datos con los datos validados
     fecha_limite = timezone.now() + timedelta(days=90)  # Fecha límite por defecto de 90 días
@@ -233,21 +240,45 @@ def iniciar_nuevo_tramite(solicitante, plantilla: PlantillaDocumento, form_data:
     nombre_base = f"{tipo_limpio}.pdf"
 
     # 6. Crear el objeto Documento y guardar el archivo
-    # Usamos la versión 1 inicial
-    documento = Documento(
-        tramite=tramite,
-        nombre=plantilla.tipo_especifico,  # El nombre del documento es el tipo de trámite
-        version=1
-    )
-    
-    # Generar la ruta usando la función centralizada que garantiza nombres limpios
-    ruta_archivo = _generar_ruta_archivo(tramite, plantilla.tipo_especifico, 1, nombre_base)
+    # Usamos transacción para asegurar consistencia en la versión
+    with transaction.atomic():
+        # Bloquear registros para evitar condiciones de carrera en la versión
+        # Aunque es el primer documento, es buena práctica si hubiera reintentos rápidos
+        last_doc = Documento.objects.select_for_update().filter(
+            tramite=tramite, 
+            nombre=plantilla.tipo_especifico
+        ).order_by('-version').first()
+        
+        version_actual = (last_doc.version + 1) if last_doc else 1
 
-    # Envolvemos el PDF en memoria para que Django lo pueda guardar
-    archivo_django = SimpleUploadedFile(nombre_base, pdf_buffer.read(), content_type='application/pdf')
-    
-    # Guardar usando la ruta explícita para evitar hash aleatorio
-    documento.archivo.save(ruta_archivo, archivo_django, save=True)
+        # Verificar existencia física para evitar colisiones y sufijos aleatorios
+        while True:
+            ruta_archivo = _generar_ruta_archivo(tramite, plantilla.tipo_especifico, version_actual, nombre_base)
+            if not default_storage.exists(ruta_archivo):
+                break
+            version_actual += 1
+
+        documento = Documento(
+            tramite=tramite,
+            nombre=plantilla.tipo_especifico,  # El nombre del documento es el tipo de trámite
+            version=version_actual
+        )
+        
+        # Envolvemos el PDF en memoria para que Django lo pueda guardar
+        archivo_django = SimpleUploadedFile(nombre_base, pdf_buffer.read(), content_type='application/pdf')
+        
+        # Guardar usando la ruta explícita para evitar hash aleatorio
+        # NOTA: Al usar upload_to dinámico en el modelo, save() usará esa función.
+        # Pero si pasamos el nombre aquí, Django podría usarlo.
+        # Sin embargo, el modelo Documento ahora tiene upload_to=documento_upload_to.
+        # Si pasamos solo el archivo, Django usará la función del modelo.
+        # Pero aquí queremos forzar el nombre que ya calculamos para asegurar consistencia.
+        # La función del modelo recalculará lo mismo.
+        
+        # Para evitar duplicidad de lógica, confiamos en el modelo, pero le pasamos el nombre correcto al archivo
+        archivo_django.name = os.path.basename(ruta_archivo)
+        documento.archivo = archivo_django
+        documento.save()
 
     print(f"📄 Documento generado: {ruta_archivo}")
 
@@ -284,26 +315,40 @@ def actualizar_datos_tramite(tramite_id: int, solicitante, form_data: dict):
     # 3. Regenerar el PDF con los nuevos datos
     pdf_buffer = _rellenar_pdf_plantilla(plantilla, tramite.datos_formulario)
 
-    # 4. Obtener la última versión del documento y crear una nueva versión
-    ultimo_documento = tramite.documentos.order_by('-version').first()
-    nueva_version = (ultimo_documento.version + 1) if ultimo_documento else 1
+    # 4. Crear nueva versión del documento de forma segura
+    with transaction.atomic():
+        # Bloquear para obtener la última versión real y evitar condiciones de carrera
+        ultimo_documento = Documento.objects.select_for_update().filter(
+            tramite=tramite,
+            nombre=plantilla.tipo_especifico
+        ).order_by('-version').first()
+        
+        nueva_version = (ultimo_documento.version + 1) if ultimo_documento else 1
 
-    # 5. Definir el nombre base del archivo
-    tipo_limpio = plantilla.tipo_especifico.lower().replace(' ', '_')
-    nombre_base = f"{tipo_limpio}.pdf"
-    
-    # Generar la ruta usando la función centralizada
-    ruta_archivo = _generar_ruta_archivo(tramite, plantilla.tipo_especifico, nueva_version, nombre_base)
+        # 5. Definir el nombre base del archivo
+        tipo_limpio = plantilla.tipo_especifico.lower().replace(' ', '_')
+        nombre_base = f"{tipo_limpio}.pdf"
+        
+        # Verificar existencia física para evitar colisiones y sufijos aleatorios
+        while True:
+            ruta_archivo = _generar_ruta_archivo(tramite, plantilla.tipo_especifico, nueva_version, nombre_base)
+            if not default_storage.exists(ruta_archivo):
+                break
+            nueva_version += 1
 
-    # 6. Crear el nuevo documento con la nueva versión
-    documento = Documento(
-        tramite=tramite,
-        nombre=plantilla.tipo_especifico,
-        version=nueva_version
-    )
+        # 6. Crear el nuevo documento con la nueva versión
+        documento = Documento(
+            tramite=tramite,
+            nombre=plantilla.tipo_especifico,
+            version=nueva_version
+        )
 
-    archivo_django = SimpleUploadedFile(nombre_base, pdf_buffer.read(), content_type='application/pdf')
-    documento.archivo.save(ruta_archivo, archivo_django, save=True)
+        archivo_django = SimpleUploadedFile(nombre_base, pdf_buffer.read(), content_type='application/pdf')
+        
+        # Para evitar duplicidad de lógica, confiamos en el modelo, pero le pasamos el nombre correcto al archivo
+        archivo_django.name = os.path.basename(ruta_archivo)
+        documento.archivo = archivo_django
+        documento.save()
 
     print(f"📄 Documento actualizado: {ruta_archivo}")
 

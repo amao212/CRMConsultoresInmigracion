@@ -1,6 +1,42 @@
+import os
+from django.apps import apps
 from django.db import models
 from django.conf import settings
-from django.utils import timezone
+from .storage import OverwriteStorage
+
+def documento_upload_to(instance, filename):
+    tramite = instance.tramite
+    solicitante_id = tramite.solicitante.id
+    nombre_documento = instance.nombre
+    version = instance.version
+    
+    # Normalizar nombre del documento para el archivo (slug)
+    documento_nombre_clean = nombre_documento.lower().replace(' ', '_')
+    
+    # Obtener extensión
+    _, ext = os.path.splitext(filename)
+    
+    # Construir nombre: nombre_vX.ext
+    new_filename = f"{documento_nombre_clean}_v{version}{ext}"
+    
+    # Segmento
+    segmento = 'general'
+    
+    # Intentar obtener la plantilla
+    PlantillaDocumento = apps.get_model('tramites', 'PlantillaDocumento')
+    
+    # Try to find template attached to tramite or by name
+    plantilla = getattr(tramite, 'plantilla', None)
+    if not plantilla:
+        # Try to find by name
+        plantilla = PlantillaDocumento.objects.filter(tipo_especifico=tramite.nombre).first()
+            
+    if plantilla:
+        segmento = plantilla.segmento.lower().replace(' ', '_')
+    elif hasattr(tramite, 'nombre'):
+         segmento = tramite.nombre.split()[0].lower()
+
+    return f"solicitante/solicitante_{solicitante_id:04d}/{segmento}/{new_filename}"
 
 class Tramite(models.Model):
     ESTADOS = (('PENDIENTE', 'Pendiente de Aprobación'), ('APROBADO', 'Aprobado'), ('RECHAZADO', 'Rechazado'), ('EN_PROCESO', 'En Proceso'), ('COMPLETADO', 'Completado'), ('RETRASADO', 'Retrasado'))
@@ -29,8 +65,9 @@ class Tarea(models.Model):
 class Documento(models.Model):
     tramite = models.ForeignKey(Tramite, on_delete=models.CASCADE, related_name='documentos')
     nombre = models.CharField(max_length=100)
-    archivo = models.FileField(upload_to='')
+    archivo = models.FileField(upload_to=documento_upload_to, storage=OverwriteStorage())
     version = models.PositiveIntegerField(default=1)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
     def __str__(self): return f"{self.nombre} (v{self.version})"
 
 class Alerta(models.Model):

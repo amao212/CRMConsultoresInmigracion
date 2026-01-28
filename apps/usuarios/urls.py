@@ -6,7 +6,10 @@ from .views_roles.admin_view import (
     CrearUsuarioView,
     EditarUsuarioView,
     EliminarUsuarioView,
-    GestionPlantillasView  # Importar la nueva vista
+    GestionPlantillasView,
+    GestionTramitesAdminView,
+    DetalleTramiteAdminView,
+    VisualizarPDFAdminView
 )
 from .views_roles.empleado_view import EmpleadoDashboardView
 from .views_roles.registro_view import RegistroView
@@ -30,5 +33,8 @@ urlpatterns = [
     path('crear-usuario/', CrearUsuarioView.as_view(), name='crear-usuario'),
     path('editar-usuario/<int:usuario_id>/', EditarUsuarioView.as_view(), name='editar-usuario'),
     path('eliminar-usuario/<int:usuario_id>/', EliminarUsuarioView.as_view(), name='eliminar-usuario'),
-    path('gestion-plantillas/', GestionPlantillasView.as_view(), name='gestion-plantillas'), # Nueva ruta
+    path('gestion-plantillas/', GestionPlantillasView.as_view(), name='gestion-plantillas'),
+    path('gestion-tramites/', GestionTramitesAdminView.as_view(), name='gestion-tramites'),
+    path('tramite/<int:tramite_id>/', DetalleTramiteAdminView.as_view(), name='detalle-tramite-admin'),
+    path('tramite/<int:tramite_id>/pdf/', VisualizarPDFAdminView.as_view(), name='visualizar-pdf-admin'),
 ]

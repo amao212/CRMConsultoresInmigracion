@@ -1,5 +1,5 @@
 import os
-from django.core.files.storage import default_storage
+from django.db import transaction
 from apps.tramites.models import Documento, HistorialCambios, PlantillaDocumento
 from .pdf_field_extractor import extraer_campos_pdf
 
@@ -14,50 +14,67 @@ def clasificar_documento(nombre_archivo):
     return 'Documento'
 
 def _generar_ruta_archivo(tramite, nombre_documento, version, filename):
+    """
+    Genera la ruta de archivo para un documento. Esta función debe ser consistente
+    con documento_upload_to en models.py
+    """
     solicitante_id = tramite.solicitante.id
+
+    # Normalizar nombre del documento para el archivo (slug)
     documento_nombre_clean = nombre_documento.lower().replace(' ', '_')
-    
+
     # Obtener extensión
     _, ext = os.path.splitext(filename)
-    
+
     # Construir nombre: nombre_vX.ext
     new_filename = f"{documento_nombre_clean}_v{version}{ext}"
-    
+
     # Segmento
     segmento = 'general'
-    if hasattr(tramite, 'plantilla') and tramite.plantilla:
-        segmento = tramite.plantilla.segmento.lower().replace(' ', '_')
+
+    # Intentar obtener la plantilla para determinar el segmento correcto
+    plantilla = getattr(tramite, 'plantilla', None)
+    if not plantilla and hasattr(tramite, 'nombre'):
+        try:
+            plantilla = PlantillaDocumento.objects.filter(tipo_especifico=tramite.nombre).first()
+        except Exception:
+            pass
+
+    if plantilla:
+        segmento = plantilla.segmento.lower().replace(' ', '_')
     elif hasattr(tramite, 'nombre'):
          segmento = tramite.nombre.split()[0].lower()
 
-    return f"solicitante_{solicitante_id}/{segmento}/{new_filename}"
+    return f"solicitante/solicitante_{solicitante_id:04d}/{segmento}/{new_filename}"
 
 def guardar_documento(tramite, archivo_subido):
-    # Clasificar
-    nombre_base = os.path.splitext(archivo_subido.name)[0]
-    nombre_documento = clasificar_documento(archivo_subido.name)
-    if nombre_documento == 'Documento':
-         nombre_documento = nombre_base
+    # Usar el nombre del trámite como tipo de documento base
+    # Esto asegura que el archivo se llame como el trámite (ej: visa_trabajo_v1.pdf)
+    nombre_documento = tramite.nombre
     
-    # Determinar versión inicial basada en DB
-    last_doc = Documento.objects.filter(tramite=tramite, nombre=nombre_documento).order_by('-version').first()
-    version_actual = (last_doc.version + 1) if last_doc else 1
-    
-    # Verificar existencia en storage para evitar colisiones y nombres aleatorios
-    # Si el archivo existe (por ejemplo, archivos huérfanos sin registro en DB), incrementamos la versión
-    while True:
-        file_path = _generar_ruta_archivo(tramite, nombre_documento, version_actual, archivo_subido.name)
-        if not default_storage.exists(file_path):
-            break
-        version_actual += 1
+    # Usamos una transacción atómica para evitar condiciones de carrera al calcular la versión
+    with transaction.atomic():
+        # Bloquear los registros de documentos de este trámite para lectura/escritura
+        # Esto asegura que si dos procesos intentan subir un archivo al mismo tiempo, uno espere al otro
+        # y la versión se calcule correctamente.
+        last_doc = Documento.objects.select_for_update().filter(
+            tramite=tramite, 
+            nombre=nombre_documento
+        ).order_by('-version').first()
         
-    # Crear objeto
-    doc = Documento(tramite=tramite, nombre=nombre_documento, version=version_actual)
-    
-    # Guardar archivo en la ruta específica
-    # Al pasar el path explícito a save(), Django usará ese nombre exacto.
-    # Como ya verificamos que no existe, no debería agregar caracteres aleatorios.
-    doc.archivo.save(file_path, archivo_subido)
+        version_actual = (last_doc.version + 1) if last_doc else 1
+        
+        # Crear objeto Documento con la versión calculada
+        # El modelo usará automáticamente documento_upload_to para generar la ruta correcta
+        doc = Documento(
+            tramite=tramite,
+            nombre=nombre_documento,
+            version=version_actual,
+            archivo=archivo_subido
+        )
+
+        # Guardar el documento - Django creará automáticamente las carpetas necesarias
+        doc.save()
     
     HistorialCambios.objects.create(
         tramite=tramite,

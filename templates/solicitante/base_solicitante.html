@@ -12,6 +12,95 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 
     {% block extra_css %}{% endblock %}
+    <style>
+        /* Estilos para el indicador de estado */
+        .status-indicator-wrapper {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-indicator-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(var(--color-border) 0% 100%); /* Default gray */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-indicator-inner {
+            width: 80%;
+            height: 80%;
+            background-color: var(--color-bg-sidebar); /* Match sidebar bg */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--color-text-light);
+        }
+
+        /* Colores de estado */
+        .status-aprobado { background: conic-gradient(#28a745 0% 100%); }
+        .status-pendiente { background: conic-gradient(#ffc107 0% 100%); }
+        .status-rechazado { background: conic-gradient(#dc3545 0% 100%); }
+        .status-en_proceso { background: conic-gradient(#007bff 0% 100%); }
+        .status-retrasado { background: conic-gradient(#fd7e14 0% 100%); }
+        .status-completado { background: conic-gradient(#28a745 0% 100%); }
+
+        /* Tooltip para items bloqueados */
+        .sidebar-sub-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none; /* Evita clicks */
+            position: relative;
+        }
+
+        /* Hack para mostrar tooltip en elemento disabled (necesita wrapper o pointer-events: auto en hijo, pero simplificamos) */
+        .sidebar-sub-item-wrapper {
+            position: relative;
+            display: block;
+        }
+
+        .sidebar-sub-item-wrapper[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-left: 10px;
+        }
+
+        /* Estilos para el avatar con iniciales */
+        .header-user-avatar-initials {
+            width: 32px;
+            height: 32px;
+            background-color: var(--color-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: var(--spacing-sm);
+            text-transform: uppercase;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-wrapper">
@@ -49,10 +138,18 @@
                             <div class="sidebar-accordion-content">
                                 <div class="sidebar-accordion-list">
                                     {% for plantilla in plantillas %}
-                                        <a href="#" class="sidebar-sub-item btn-cargar-formulario"
-                                           data-plantilla-id="{{ plantilla.id }}">
-                                            {{ plantilla.tipo }}
-                                        </a>
+                                        {% if plantilla.bloqueado %}
+                                            <div class="sidebar-sub-item-wrapper" title="Ya tienes un trámite en curso en este segmento">
+                                                <a href="#" class="sidebar-sub-item disabled">
+                                                    {{ plantilla.tipo }} <i class="fas fa-lock" style="font-size: 0.7em; margin-left: 5px;"></i>
+                                                </a>
+                                            </div>
+                                        {% else %}
+                                            <a href="#" class="sidebar-sub-item btn-cargar-formulario"
+                                               data-plantilla-id="{{ plantilla.id }}">
+                                                {{ plantilla.tipo }}
+                                            </a>
+                                        {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
@@ -68,9 +165,33 @@
             <!-- Usuario -->
             <div class="sidebar-footer">
                 <div class="sidebar-user">
-                    <div class="sidebar-user-avatar">
-                        <i class="fas fa-user"></i>
+                    <!-- Indicador de Estado (Rueda) -->
+                    <div class="status-indicator-wrapper">
+                        {% if tramite_reciente %}
+                            <div class="status-indicator-circle status-{{ tramite_reciente.estado|lower }}" title="Estado: {{ tramite_reciente.get_estado_display }}">
+                                <div class="status-indicator-inner">
+                                    {% if tramite_reciente.estado == 'APROBADO' or tramite_reciente.estado == 'COMPLETADO' %}
+                                        <i class="fas fa-check" style="color: #28a745;"></i>
+                                    {% elif tramite_reciente.estado == 'RECHAZADO' %}
+                                        <i class="fas fa-times" style="color: #dc3545;"></i>
+                                    {% elif tramite_reciente.estado == 'PENDIENTE' %}
+                                        <i class="fas fa-clock" style="color: #ffc107;"></i>
+                                    {% elif tramite_reciente.estado == 'EN_PROCESO' %}
+                                        <i class="fas fa-spinner" style="color: #007bff;"></i>
+                                    {% else %}
+                                        <i class="fas fa-info"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="status-indicator-circle" title="Sin trámites">
+                                <div class="status-indicator-inner">
+                                    <span style="font-size: 0.6rem; color: #aaa;">N/A</span>
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
+
                     <div class="sidebar-user-info">
                         <div class="sidebar-user-name">{{ user.nombre|default:"Solicitante" }}</div>
                         <div class="sidebar-user-role">Solicitante</div>
@@ -91,7 +212,17 @@
                 </div>
                 <div class="dashboard-header-right">
                     <div class="header-user-info">
-                        <i class="fas fa-user-circle"></i>
+                        {% with nombre_completo=user.nombre|default:"Solicitante" %}
+                            {% with partes=nombre_completo.split %}
+                                <div class="header-user-avatar-initials">
+                                    {% if partes|length > 1 %}
+                                        {{ partes.0|slice:":1" }}{{ partes.1|slice:":1" }}
+                                    {% else %}
+                                        {{ partes.0|slice:":2" }}
+                                    {% endif %}
+                                </div>
+                            {% endwith %}
+                        {% endwith %}
                         <span class="header-user-name">{{ user.nombre|default:"Solicitante" }}</span>
                     </div>
                     <a href="{% url 'usuarios:logout' %}" class="header-logout-btn">

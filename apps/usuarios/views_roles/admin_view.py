@@ -4,10 +4,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
+from django.http import FileResponse, Http404
 from apps.usuarios.models import UsuarioCRM
 from apps.tramites.selectors import get_all_plantillas
 from apps.tramites.services.storage_service import crear_plantilla_documento, eliminar_plantilla_documento
-from apps.tramites.models import PlantillaDocumento # Importar el modelo PlantillaDocumento
+from apps.tramites.models import PlantillaDocumento, Tramite, Documento
 
 @method_decorator(never_cache, name='dispatch')
 class AdminDashboardView(LoginRequiredMixin, View):
@@ -238,3 +239,82 @@ class GestionPlantillasView(LoginRequiredMixin, View):
                 messages.error(request, f'Error al subir plantilla: {str(e)}')
             
             return redirect('usuarios:gestion-plantillas')
+
+
+@method_decorator(never_cache, name='dispatch')
+class GestionTramitesAdminView(LoginRequiredMixin, View):
+    """
+    Vista para que el administrador vea todos los trámites del sistema.
+    """
+    def get(self, request):
+        if request.user.rol != 'ADMINISTRADOR':
+            return redirect('usuarios:login')
+
+        tramites = Tramite.objects.select_related(
+            'solicitante', 'empleado_asignado'
+        ).order_by('-fecha_inicio')
+
+        context = {
+            'user': request.user,
+            'tramites': tramites
+        }
+        return render(request, 'administrador/gestion_tramites.html', context)
+
+
+@method_decorator(never_cache, name='dispatch')
+class DetalleTramiteAdminView(LoginRequiredMixin, View):
+    """
+    Vista para que el administrador vea el detalle de un trámite específico.
+    """
+    def get(self, request, tramite_id):
+        if request.user.rol != 'ADMINISTRADOR':
+            return redirect('usuarios:login')
+
+        tramite = get_object_or_404(
+            Tramite.objects.select_related('solicitante', 'empleado_asignado'),
+            id=tramite_id
+        )
+
+        # Obtener el último documento
+        ultimo_documento = Documento.objects.filter(tramite=tramite).order_by('-version').first()
+
+        # Obtener historial de cambios
+        from apps.tramites.models import HistorialCambios
+        historial = HistorialCambios.objects.filter(tramite=tramite).order_by('-fecha_cambio')[:10]
+
+        context = {
+            'user': request.user,
+            'tramite': tramite,
+            'documento': ultimo_documento,
+            'historial': historial,
+        }
+        return render(request, 'administrador/detalle_tramite.html', context)
+
+
+@method_decorator(never_cache, name='dispatch')
+class VisualizarPDFAdminView(LoginRequiredMixin, View):
+    """
+    Vista para que el administrador visualice el PDF de un trámite.
+    """
+    def get(self, request, tramite_id):
+        if request.user.rol != 'ADMINISTRADOR':
+            raise Http404("No tiene permiso para ver este documento.")
+
+        tramite = get_object_or_404(Tramite, id=tramite_id)
+
+        # Obtener el documento más reciente
+        documento = tramite.documentos.order_by('-version').first()
+
+        if not documento or not documento.archivo:
+            raise Http404("No se encontró el documento.")
+
+        try:
+            # Retornar el archivo PDF
+            return FileResponse(
+                documento.archivo.open('rb'),
+                content_type='application/pdf',
+                as_attachment=False,
+                filename=f"{tramite.nombre}_v{documento.version}.pdf"
+            )
+        except Exception as e:
+            raise Http404(f"Error al abrir el documento: {e}")

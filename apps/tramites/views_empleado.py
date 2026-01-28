@@ -10,9 +10,12 @@ from django.http import JsonResponse, FileResponse, Http404
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.template.loader import render_to_string
+from django.db import transaction
+from django.core.files.storage import default_storage
 
 from apps.tramites.models import Tramite, Documento, HistorialCambios
 from apps.tramites.services.aprobacion_service import AprobacionTramiteService
+from apps.tramites.services.storage_service import _generar_ruta_archivo
 
 
 class EmpleadoDashboardView(LoginRequiredMixin, View):
@@ -91,19 +94,35 @@ class DetalleTramiteEmpleadoView(LoginRequiredMixin, View):
             # PDF simple de prueba
             pdf_content = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /MediaBox [0 0 612 792] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 88 >>\nstream\nBT\n/F1 18 Tf\n100 700 Td\n(Documento del Tramite) Tj\n0 -30 Td\n(Pendiente de revision) Tj\nET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000314 00000 n\ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n450\n%%EOF"
 
-            documento = Documento(
-                tramite=tramite,
-                nombre=tramite.nombre,
-                version=1
-            )
+            # Usar transacción para asegurar consistencia en la versión
+            with transaction.atomic():
+                # Bloquear registros para evitar condiciones de carrera
+                last_doc = Documento.objects.select_for_update().filter(
+                    tramite=tramite, 
+                    nombre=tramite.nombre
+                ).order_by('-version').first()
+                
+                version_actual = (last_doc.version + 1) if last_doc else 1
 
-            # Guardar archivo
-            id_formateado = f"solicitante_{tramite.solicitante.id:04d}"
-            tipo_limpio = tramite.nombre.lower().replace(' ', '_')
-            nombre_archivo = f"{tipo_limpio}_v1.pdf"
-            ruta_archivo = f"solicitante/{id_formateado}/visas/{nombre_archivo}"
+                # Nombre base limpio
+                tipo_limpio = tramite.nombre.lower().replace(' ', '_')
+                nombre_base = f"{tipo_limpio}.pdf"
+                
+                # Verificar existencia física para evitar colisiones y sufijos aleatorios
+                while True:
+                    ruta_archivo = _generar_ruta_archivo(tramite, tramite.nombre, version_actual, nombre_base)
+                    if not default_storage.exists(ruta_archivo):
+                        break
+                    version_actual += 1
 
-            documento.archivo.save(ruta_archivo, ContentFile(pdf_content), save=True)
+                documento = Documento(
+                    tramite=tramite,
+                    nombre=tramite.nombre,
+                    version=version_actual
+                )
+
+                documento.archivo.save(ruta_archivo, ContentFile(pdf_content), save=True)
+
             print(f"DEBUG - Documento creado: {documento.archivo.name}")
 
         context = {

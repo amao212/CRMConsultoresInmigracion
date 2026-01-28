@@ -1,0 +1,169 @@
+{% extends "administrador/base_admin.html" %}
+
+{% block title %}Detalle del Trámite{% endblock %}
+{% block page_title %}Detalle del Trámite #{{ tramite.id }}{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: var(--spacing-lg);">
+
+    <!-- Columna Izquierda: Información del Trámite -->
+    <div>
+        <!-- Información General -->
+        <div class="card-custom" style="margin-bottom: var(--spacing-lg);">
+            <div class="card-header-custom">
+                <h4 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin: 0;">
+                    <i class="fas fa-info-circle" style="margin-right: var(--spacing-sm); color: var(--color-primary);"></i>
+                    Información General
+                </h4>
+            </div>
+            <div class="card-body-custom">
+                <div style="margin-bottom: var(--spacing-md);">
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                        <strong>Nombre del Trámite:</strong>
+                    </p>
+                    <p style="font-size: var(--font-size-md); margin: 0;">{{ tramite.nombre }}</p>
+                </div>
+
+                <div style="margin-bottom: var(--spacing-md);">
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                        <strong>Estado:</strong>
+                    </p>
+                    {% if tramite.estado == 'PENDIENTE' %}
+                        <span class="badge-custom badge-warning-custom">Pendiente</span>
+                    {% elif tramite.estado == 'APROBADO' %}
+                        <span class="badge-custom badge-success-custom">Aprobado</span>
+                    {% elif tramite.estado == 'RECHAZADO' %}
+                        <span class="badge-custom badge-danger-custom">Rechazado</span>
+                    {% elif tramite.estado == 'EN_PROCESO' %}
+                        <span class="badge-custom badge-info-custom">En Proceso</span>
+                    {% elif tramite.estado == 'COMPLETADO' %}
+                        <span class="badge-custom badge-success-custom">Completado</span>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: var(--spacing-md);">
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                        <strong>Solicitante:</strong>
+                    </p>
+                    <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                        <i class="fas fa-user" style="color: var(--color-text-secondary);"></i>
+                        <span>{{ tramite.solicitante.nombre }} ({{ tramite.solicitante.email }})</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: var(--spacing-md);">
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                        <strong>Empleado Asignado:</strong>
+                    </p>
+                    {% if tramite.empleado_asignado %}
+                        <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                            <i class="fas fa-user-tie" style="color: var(--color-success);"></i>
+                            <span>{{ tramite.empleado_asignado.nombre }}</span>
+                        </div>
+                    {% else %}
+                        <span style="color: var(--color-text-muted); font-style: italic;">Sin asignar</span>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: var(--spacing-md);">
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                        <strong>Fecha de Inicio:</strong>
+                    </p>
+                    <p style="margin: 0;">{{ tramite.fecha_inicio|date:"d/m/Y H:i" }}</p>
+                </div>
+
+                <div>
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                        <strong>Fecha Límite:</strong>
+                    </p>
+                    <p style="margin: 0;">{{ tramite.fecha_limite|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de Cambios -->
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <h4 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin: 0;">
+                    <i class="fas fa-history" style="margin-right: var(--spacing-sm); color: var(--color-info);"></i>
+                    Historial de Cambios
+                </h4>
+            </div>
+            <div class="card-body-custom">
+                {% if historial %}
+                    <div class="timeline-custom">
+                        {% for cambio in historial %}
+                        <div class="timeline-item-custom">
+                            <div class="timeline-marker-custom"></div>
+                            <div class="timeline-content-custom">
+                                <p style="font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                                    {{ cambio.descripcion }}
+                                </p>
+                                <span style="color: var(--color-text-muted); font-size: var(--font-size-xs);">
+                                    {{ cambio.fecha|date:"d/m/Y H:i" }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: var(--color-text-muted); text-align: center; padding: var(--spacing-lg);">
+                        No hay cambios registrados aún.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Visor de PDF -->
+    <div>
+        <div class="card-custom">
+            <div class="card-header-custom" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center;">
+                    <i class="fas fa-file-pdf" style="margin-right: var(--spacing-sm); color: var(--color-danger); font-size: var(--font-size-lg);"></i>
+                    <h4 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin: 0;">
+                        Documento del Trámite
+                    </h4>
+                </div>
+                {% if documento %}
+                    <div style="display: flex; gap: var(--spacing-sm);">
+                        <a href="{{ documento.archivo.url }}" download class="btn-custom btn-primary-custom btn-sm">
+                            <i class="fas fa-download"></i> Descargar
+                        </a>
+                        <a href="{% url 'usuarios:visualizar-pdf-admin' tramite.id %}" target="_blank" class="btn-custom btn-secondary-custom btn-sm">
+                            <i class="fas fa-external-link-alt"></i> Abrir en nueva pestaña
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-body-custom" style="padding: 0; min-height: 600px; background-color: var(--color-bg-light);">
+                {% if documento %}
+                    <iframe
+                        src="{% url 'usuarios:visualizar-pdf-admin' tramite.id %}"
+                        width="100%"
+                        height="800px"
+                        style="border: none; display: block;">
+                    </iframe>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 600px; text-align: center; padding: var(--spacing-xl);">
+                        <div style="background-color: #fff3cd; padding: var(--spacing-lg); border-radius: 50%; margin-bottom: var(--spacing-md);">
+                            <i class="fas fa-file-excel" style="font-size: 3rem; color: #ffc107;"></i>
+                        </div>
+                        <h5 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Documento no disponible</h5>
+                        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm);">
+                            El solicitante aún no ha subido ningún documento para este trámite.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Botón de Regreso -->
+        <div style="margin-top: var(--spacing-lg);">
+            <a href="{% url 'usuarios:gestion-tramites' %}" class="btn-custom btn-secondary-custom">
+                <i class="fas fa-arrow-left"></i> Volver a la lista
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
