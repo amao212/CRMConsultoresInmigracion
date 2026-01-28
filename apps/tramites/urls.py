@@ -5,7 +5,8 @@ from .views import (
     ActualizarTramiteView,
     DetalleTramiteSolicitanteView,
     DescargarPlantillaView,
-    VisualizarPDFSolicitanteView
+    VisualizarPDFSolicitanteView,
+    VisualizarDocumentoEspecificoView
 )
 
 app_name = 'tramites'
@@ -17,4 +18,5 @@ urlpatterns = [
     path('detalle/<int:tramite_id>/', DetalleTramiteSolicitanteView.as_view(), name='detalle_tramite'),
     path('descargar-plantilla/<int:tramite_id>/', DescargarPlantillaView.as_view(), name='descargar_plantilla'),
     path('tramite/<int:tramite_id>/pdf/', VisualizarPDFSolicitanteView.as_view(), name='visualizar-pdf'),
+    path('documento/<int:documento_id>/ver/', VisualizarDocumentoEspecificoView.as_view(), name='visualizar-documento'),
 ]

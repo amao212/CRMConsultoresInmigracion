@@ -8,130 +8,188 @@
     <div class="card-header-custom">
         <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin: 0;">
             <i class="fas fa-info-circle" style="margin-right: var(--spacing-sm); color: var(--color-primary);"></i>
-            Detalle: {{ tramite.nombre }}
+            Historial: {{ tramite.nombre }}
         </h3>
     </div>
     <div class="card-body-custom">
+
+        <!-- Sección A: Resumen del tipo de trámite -->
+        <h4 style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-sm);">
+            Resumen del Trámite
+        </h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
             <div>
-                <p><strong>ID:</strong> #{{ tramite.id }}</p>
-                <p><strong>Estado:</strong> {{ tramite.get_estado_display }}</p>
+                <p><strong>Tipo de Trámite:</strong> {{ tramite.nombre }}</p>
+                <p><strong>Estado Actual:</strong>
+                    {% if tramite.estado == 'PENDIENTE' %}
+                        <span class="badge-custom badge-warning">{{ tramite.get_estado_display }}</span>
+                    {% elif tramite.estado == 'APROBADO' %}
+                        <span class="badge-custom badge-success">{{ tramite.get_estado_display }}</span>
+                    {% elif tramite.estado == 'RECHAZADO' %}
+                        <span class="badge-custom badge-danger">{{ tramite.get_estado_display }}</span>
+                    {% elif tramite.estado == 'EN_PROCESO' %}
+                        <span class="badge-custom badge-info">{{ tramite.get_estado_display }}</span>
+                    {% else %}
+                        <span class="badge-custom badge-secondary">{{ tramite.get_estado_display }}</span>
+                    {% endif %}
+                </p>
                 <p><strong>Fecha Inicio:</strong> {{ tramite.fecha_inicio|date:"d/m/Y H:i" }}</p>
             </div>
             <div>
+                <p><strong>ID Referencia:</strong> #{{ tramite.id }}</p>
                 <p><strong>Empleado Asignado:</strong> {{ tramite.empleado_asignado.nombre|default:"Sin asignar" }}</p>
                 <p><strong>Fecha Límite:</strong> {{ tramite.fecha_limite|date:"d/m/Y" }}</p>
             </div>
         </div>
 
-        {% if not ultimo_documento %}
-        <hr style="border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing-lg) 0;">
-
-        <h4 style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-md);">Gestión de Documentos</h4>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-xl);">
-            <!-- Columna Izquierda: Descargar Plantilla -->
-            <div>
-                <h5 style="font-size: var(--font-size-md); margin-bottom: var(--spacing-sm);">1. Descargar Plantilla</h5>
-                <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
-                    Descargue el documento maestro para llenarlo con sus datos.
-                </p>
-                {% if plantilla and plantilla.archivo_base %}
-                    <a href="{% url 'tramites:descargar_plantilla' tramite.id %}" class="btn-custom btn-secondary" style="width: 100%; text-align: center;">
-                        <i class="fas fa-download"></i> Descargar Plantilla PDF
-                    </a>
-                {% else %}
-                    <div class="alert-custom alert-custom-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span>No hay plantilla disponible para descargar.</span>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- Columna Derecha: Subir Documento -->
-            <div>
-                <h5 style="font-size: var(--font-size-md); margin-bottom: var(--spacing-sm);">2. Subir Documento Llenado</h5>
-                <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
-                    Suba el PDF completado. Se guardará como una nueva versión.
-                </p>
-
-                <form method="post" enctype="multipart/form-data" style="background-color: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: var(--border-radius-md);">
-                    {% csrf_token %}
-                    <div style="margin-bottom: var(--spacing-md);">
-                        {{ form.archivo }}
-                        {% if form.archivo.errors %}
-                            <div style="color: var(--color-danger); font-size: var(--font-size-sm); margin-top: var(--spacing-xs);">
-                                {{ form.archivo.errors.0 }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <button type="submit" class="btn-custom btn-primary" style="width: 100%;">
-                        <i class="fas fa-upload"></i> Subir PDF Llenado
-                    </button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
-
-        <hr style="border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing-lg) 0;">
-
-        <!-- Visor de PDF del Documento -->
-        <h4 style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-md);">
-            <i class="fas fa-file-pdf" style="margin-right: var(--spacing-sm); color: var(--color-danger);"></i>
-            Documento del Trámite
+        <!-- Sección B: Línea de tiempo / Historial de cambios -->
+        <h4 style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-sm);">
+            Historial de Movimientos
         </h4>
 
-        <div class="card-custom">
-            <div class="card-header-custom" style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center;">
-                    <i class="fas fa-file-pdf" style="margin-right: var(--spacing-sm); color: var(--color-danger); font-size: var(--font-size-lg);"></i>
-                    <span style="font-weight: var(--font-weight-semibold);">Vista Previa del Documento</span>
-                </div>
-                {% if ultimo_documento %}
-                    <div style="display: flex; gap: var(--spacing-sm);">
-                        <a href="{{ ultimo_documento.archivo.url }}" download class="btn-custom btn-primary btn-sm">
-                            <i class="fas fa-download"></i> Descargar
-                        </a>
-                        <a href="{% url 'tramites:visualizar-pdf' tramite.id %}" target="_blank" class="btn-custom btn-secondary btn-sm">
-                            <i class="fas fa-external-link-alt"></i> Abrir en nueva pestaña
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-            <div class="card-body-custom" style="padding: 0; min-height: 400px; background-color: var(--color-bg-light);">
-                {% if ultimo_documento %}
-                    <iframe src="{% url 'tramites:visualizar-pdf' tramite.id %}" width="100%" height="600px" style="border: none; display: block;"></iframe>
-                {% else %}
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; text-align: center; padding: var(--spacing-xl);">
-                        <div style="background-color: var(--color-warning-light, #fff3cd); padding: var(--spacing-lg); border-radius: 50%; margin-bottom: var(--spacing-md);">
-                            <i class="fas fa-file-excel" style="font-size: 3rem; color: var(--color-warning, #ffc107);"></i>
+        {% if historial %}
+            <div class="timeline-container" style="margin-bottom: var(--spacing-xl);">
+                {% for evento in historial %}
+                    <div class="timeline-item" style="display: flex; margin-bottom: var(--spacing-md); padding-bottom: var(--spacing-md); border-bottom: 1px dashed var(--color-border);">
+                        <div class="timeline-date" style="min-width: 150px; font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+                            <i class="far fa-clock"></i> {{ evento.fecha_cambio|date:"d/m/Y H:i" }}
                         </div>
-                        <h5 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Documento no disponible</h5>
-                        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm);">
-                            Aún no ha subido ningún documento para este trámite. Use el formulario arriba para subir un PDF.
-                        </p>
+                        <div class="timeline-content" style="flex: 1;">
+                            <div style="font-weight: var(--font-weight-semibold);">
+                                {% if evento.estado_anterior and evento.estado_nuevo %}
+                                    Cambio de estado: {{ evento.estado_anterior }} <i class="fas fa-arrow-right" style="font-size: 0.8em; color: var(--color-text-muted);"></i> <strong>{{ evento.estado_nuevo }}</strong>
+                                {% else %}
+                                    Actualización del trámite
+                                {% endif %}
+                            </div>
+                            <div style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-top: 4px;">
+                                {{ evento.descripcion }}
+                            </div>
+                            {% if evento.usuario %}
+                                <div style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 4px;">
+                                    Por: {{ evento.usuario.nombre }} ({{ evento.usuario.get_rol_display }})
+                                </div>
+                            {% endif %}
+
+                            {% if evento.estado_nuevo == 'RECHAZADO' and tramite.motivo_rechazo %}
+                                <div class="alert-custom alert-custom-danger" style="margin-top: var(--spacing-sm); padding: var(--spacing-sm);">
+                                    <strong>Motivo de rechazo:</strong> {{ tramite.motivo_rechazo }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing-lg) 0;">
-
-        <!-- Información del Estado -->
-        {% if ultimo_documento %}
-            <div class="alert-custom alert-custom-success" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <i class="fas fa-check-circle"></i>
-                    <strong>Documento subido: Sí</strong>
-                    <span style="margin-left: var(--spacing-md); font-size: var(--font-size-sm); color: var(--color-text-secondary);">
-                        (Versión {{ ultimo_documento.version }} - Subido el {{ ultimo_documento.fecha_subida|date:"d/m/Y H:i" }})
-                    </span>
-                </div>
+                {% endfor %}
             </div>
         {% else %}
-            <div class="alert-custom alert-custom-info">
-                <i class="fas fa-info-circle"></i>
-                <span>Aún no ha subido ningún documento para este trámite.</span>
+            <div class="alert-custom alert-custom-info" style="margin-bottom: var(--spacing-xl);">
+                <i class="fas fa-info-circle"></i> Aún no hay movimientos registrados para este tipo de trámite.
+            </div>
+        {% endif %}
+
+        <!-- Sección C: Documentos (PDF) -->
+        <h4 style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-sm);">
+            Documentos Asociados
+        </h4>
+
+        {% if documentos %}
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Versión</th>
+                            <th>Nombre Documento</th>
+                            <th>Fecha Subida</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documentos %}
+                            <tr>
+                                <td>v{{ doc.version }}</td>
+                                <td>{{ doc.nombre }}</td>
+                                <td>{{ doc.fecha_subida|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <div style="display: flex; gap: var(--spacing-sm);">
+                                        <button type="button" class="btn-custom btn-secondary btn-sm btn-ver-pdf" data-url="{% url 'tramites:visualizar-documento' doc.id %}">
+                                            <i class="fas fa-file-pdf"></i> Ver PDF
+                                        </button>
+                                        <a href="{{ doc.archivo.url }}" download class="btn-custom btn-primary btn-sm">
+                                            <i class="fas fa-download"></i> Descargar
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Contenedor para la vista previa del PDF (Oculto por defecto) -->
+            <div id="pdf-preview-container" style="display: none; margin-top: var(--spacing-lg); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); overflow: hidden;">
+                <div style="background-color: var(--color-bg-secondary); padding: var(--spacing-sm) var(--spacing-md); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border);">
+                    <span style="font-weight: var(--font-weight-semibold); color: var(--color-text-primary);">
+                        <i class="fas fa-eye" style="margin-right: 5px;"></i> Vista Previa
+                    </span>
+                    <button type="button" id="btn-cerrar-preview" class="btn-custom btn-sm" style="background: transparent; color: var(--color-text-secondary); border: none;">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+                <div style="background-color: var(--color-bg-light); height: 600px;">
+                    <iframe id="pdf-viewer-frame" src="" width="100%" height="100%" style="border: none;"></iframe>
+                </div>
+            </div>
+
+        {% else %}
+            <div class="alert-custom alert-custom-warning" style="margin-bottom: var(--spacing-xl);">
+                <i class="fas fa-exclamation-triangle"></i> No hay documentos cargados.
+            </div>
+        {% endif %}
+
+        {% if mostrar_gestion_documentos %}
+            <hr style="border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing-lg) 0;">
+
+            <h4 style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-md);">Gestión de Documentos</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-xl);">
+                <!-- Columna Izquierda: Descargar Plantilla -->
+                <div>
+                    <h5 style="font-size: var(--font-size-md); margin-bottom: var(--spacing-sm);">1. Descargar Plantilla</h5>
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                        Descargue el documento maestro para llenarlo con sus datos.
+                    </p>
+                    {% if plantilla and plantilla.archivo_base %}
+                        <a href="{% url 'tramites:descargar_plantilla' tramite.id %}" class="btn-custom btn-secondary" style="width: 100%; text-align: center;">
+                            <i class="fas fa-download"></i> Descargar Plantilla PDF
+                        </a>
+                    {% else %}
+                        <div class="alert-custom alert-custom-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>No hay plantilla disponible para descargar.</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Columna Derecha: Subir Documento -->
+                <div>
+                    <h5 style="font-size: var(--font-size-md); margin-bottom: var(--spacing-sm);">2. Subir Nueva Versión</h5>
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                        Suba el PDF completado. Se guardará como una nueva versión.
+                    </p>
+
+                    <form method="post" enctype="multipart/form-data" style="background-color: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: var(--border-radius-md);">
+                        {% csrf_token %}
+                        <div style="margin-bottom: var(--spacing-md);">
+                            {{ form.archivo }}
+                            {% if form.archivo.errors %}
+                                <div style="color: var(--color-danger); font-size: var(--font-size-sm); margin-top: var(--spacing-xs);">
+                                    {{ form.archivo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn-custom btn-primary" style="width: 100%;">
+                            <i class="fas fa-upload"></i> Subir PDF
+                        </button>
+                    </form>
+                </div>
             </div>
         {% endif %}
 
@@ -142,4 +200,38 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const previewContainer = document.getElementById('pdf-preview-container');
+    const viewerFrame = document.getElementById('pdf-viewer-frame');
+    const closeBtn = document.getElementById('btn-cerrar-preview');
+    const viewButtons = document.querySelectorAll('.btn-ver-pdf');
+
+    // Función para mostrar el PDF
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pdfUrl = this.getAttribute('data-url');
+
+            // Si ya está visible y es el mismo PDF, no hacer nada (o podríamos recargar)
+            // Si es diferente, cambiar src
+            viewerFrame.src = pdfUrl;
+            previewContainer.style.display = 'block';
+
+            // Scroll suave hacia el visor
+            previewContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // Función para cerrar el visor
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            previewContainer.style.display = 'none';
+            viewerFrame.src = ''; // Limpiar src para detener carga/memoria
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from collections import defaultdict
 
-from .models import PlantillaDocumento, CampoPlantilla, Tramite, Documento
+from .models import PlantillaDocumento, CampoPlantilla, Tramite, Documento, HistorialCambios
 from .services import iniciar_nuevo_tramite, actualizar_datos_tramite, TramiteDataService
 from .services.storage_service import guardar_documento
 from .forms import SubirDocumentoForm
@@ -207,31 +207,102 @@ class ActualizarTramiteView(LoginRequiredMixin, View):
 class DetalleTramiteSolicitanteView(LoginRequiredMixin, View):
     """
     Vista para que el solicitante vea el detalle de su trámite, descargue la plantilla y suba el PDF llenado.
+    Ahora refactorizada para mostrar historial consolidado por tipo de trámite.
     """
     def get(self, request, tramite_id):
         if request.user.rol != 'SOLICITANTE':
             messages.error(request, "Acceso denegado.")
             return redirect(reverse('usuarios:login'))
 
-        tramite = get_object_or_404(Tramite, id=tramite_id, solicitante=request.user)
+        # Obtener el trámite solicitado
+        tramite_actual = get_object_or_404(Tramite, id=tramite_id, solicitante=request.user)
         
-        # Intentar obtener la plantilla asociada
+        # Agrupar trámites del mismo tipo (nombre) para este solicitante
+        # Esto permite ver el historial completo de "Visa de aplicación", por ejemplo, aunque sean varios registros
+        tramites_tipo = Tramite.objects.filter(
+            solicitante=request.user,
+            nombre=tramite_actual.nombre
+        ).order_by('-fecha_inicio')
+        
+        # Consolidar historial de cambios de todos los trámites de este tipo
+        historial_consolidado = HistorialCambios.objects.filter(
+            tramite__in=tramites_tipo
+        ).select_related('tramite', 'usuario').order_by('-fecha_cambio')
+        
+        # Obtener documentos de todos los trámites de este tipo
+        documentos_consolidado = Documento.objects.filter(
+            tramite__in=tramites_tipo
+        ).select_related('tramite').order_by('-fecha_subida')
+        
+        # Intentar obtener la plantilla asociada (usando el trámite más reciente o el actual)
         plantilla = None
         try:
-            plantilla = PlantillaDocumento.objects.filter(tipo_especifico=tramite.nombre, activo=True).first()
+            plantilla = PlantillaDocumento.objects.filter(tipo_especifico=tramite_actual.nombre, activo=True).first()
         except Exception:
             pass
 
-        # Obtener el último documento subido (si existe)
-        ultimo_documento = Documento.objects.filter(tramite=tramite).order_by('-version').first()
-        
+        # Formulario para subir documento (se asocia al trámite actual/más reciente activo)
+        # Si el trámite actual está finalizado, quizás deberíamos bloquear la subida o crear uno nuevo,
+        # pero por ahora mantenemos la lógica de subir al trámite actual si no está cerrado, o al último.
+        # Para simplificar, usamos el tramite_id que llegó en la URL.
         form = SubirDocumentoForm()
+        
+        # Determinar si mostrar opción de subida (solo si el trámite actual está en estado final)
+        # REQUISITO: La sección “Gestión de Documentos” debe mostrarse solo si el trámite está FINALIZADO (APROBADO, RECHAZADO).
+        # Si está en curso (PENDIENTE, EN_PROCESO, etc.), NO debe mostrarse.
+        
+        # estados_finales = ['APROBADO', 'RECHAZADO']
+        # mostrar_gestion_documentos = tramite_actual.estado in estados_finales
+        
+        # NUEVO REQUISITO: "en ningun historial de tramite en la pantalla del solicitante, no debe salir la parte de gestión de documento"
+        # Esto significa que NUNCA se debe mostrar la gestión de documentos en esta vista.
+        mostrar_gestion_documentos = False
+
+        # --- Logic added to populate the sidebar (same as Dashboard) ---
+        # 1. Get all tramites for the user to calculate status/menu
+        all_tramites = Tramite.objects.filter(solicitante=request.user).order_by('-fecha_inicio')
+        
+        # 2. Identify blocked segments
+        estados_activos = ['PENDIENTE', 'EN_PROCESO', 'RETRASADO']
+        segmentos_bloqueados = set()
+        plantillas_all = PlantillaDocumento.objects.all()
+        mapa_tramite_segmento = {p.tipo_especifico: p.segmento for p in plantillas_all}
+        
+        for t in all_tramites:
+            if t.estado in estados_activos:
+                segmento = mapa_tramite_segmento.get(t.nombre)
+                if segmento:
+                    segmentos_bloqueados.add(segmento)
+
+        # 3. Build the menu
+        plantillas_activas = PlantillaDocumento.objects.filter(activo=True).order_by('segmento', 'tipo_especifico')
+        menu_plantillas = defaultdict(list)
+        tipos_vistos = set()
+
+        for p in plantillas_activas:
+            if p.tipo_especifico not in tipos_vistos:
+                bloqueado = p.segmento in segmentos_bloqueados
+                menu_plantillas[p.segmento].append({
+                    'id': p.id,
+                    'tipo': p.tipo_especifico,
+                    'bloqueado': bloqueado
+                })
+                tipos_vistos.add(p.tipo_especifico)
+
+        # 4. Get recent tramite for the spinner
+        tramite_reciente = all_tramites.first()
+        # ---------------------------------------------------------------
 
         context = {
-            'tramite': tramite,
+            'tramite': tramite_actual, # Trámite principal/actual
+            'tramites_tipo': tramites_tipo, # Lista de trámites del mismo tipo
+            'historial': historial_consolidado,
+            'documentos': documentos_consolidado,
             'plantilla': plantilla,
-            'ultimo_documento': ultimo_documento,
             'form': form,
+            'mostrar_gestion_documentos': mostrar_gestion_documentos,
+            'menu_plantillas': dict(menu_plantillas),
+            'tramite_reciente': tramite_reciente,
         }
         return render(request, 'tramites/detalle_tramite_solicitante.html', context)
 
@@ -313,3 +384,27 @@ class VisualizarPDFSolicitanteView(LoginRequiredMixin, View):
         except Exception as e:
             raise Http404(f"Error al abrir el documento: {e}")
 
+class VisualizarDocumentoEspecificoView(LoginRequiredMixin, View):
+    """
+    Vista para visualizar un documento específico por su ID.
+    Valida que el documento pertenezca a un trámite del solicitante.
+    """
+    def get(self, request, documento_id):
+        if request.user.rol != 'SOLICITANTE':
+            raise PermissionDenied("Acceso denegado.")
+
+        documento = get_object_or_404(Documento, id=documento_id)
+        
+        # Validar que el trámite pertenezca al usuario
+        if documento.tramite.solicitante != request.user:
+            raise PermissionDenied("No tiene permiso para ver este documento.")
+
+        try:
+            return FileResponse(
+                documento.archivo.open('rb'),
+                content_type='application/pdf',
+                as_attachment=False,
+                filename=f"{documento.nombre}_v{documento.version}.pdf"
+            )
+        except Exception as e:
+            raise Http404(f"Error al abrir el documento: {e}")
