@@ -1,4 +1,12 @@
-# CRM Consultores Inmigracion
+# CRM para Consultores de Inmigración
+## Verificación y validación de software
+## GRUPO 3
+### Integrantes:
+- Angel Anguaya
+- Jimmy Arias
+- Sebastian Correa
+- Brandon Jaya
+- Daniel Oña
 
 Guía paso a paso para instalar y ejecutar el proyecto en un entorno local (Windows y Linux).
 
@@ -113,7 +121,7 @@ python manage.py seed_superuser
 python manage.py createsuperuser
 ```
 
-*Si usaste `seed_superuser`, las credenciales por defecto suelen ser:*
+*Si usaste `seed_superuser`, las credenciales son:*
 *   **Email:** `admin@admin.com`
 *   **Password:** `admin123`
 
