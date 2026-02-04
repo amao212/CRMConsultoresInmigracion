@@ -248,3 +248,46 @@ def step_impl_verificar_incremento(context, version):
     version_esperada = int(version)
     assert context.documento_subido.version == version_esperada, \
         f"La versión no se incrementó correctamente. Esperada: {version_esperada}, Actual: {context.documento_subido.version}"
+
+
+@step("el solicitante sube dos archivos PDF completados para este trámite")
+def step_impl_sube_dos_pdfs(context):
+    from apps.tramites.models import Documento
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    # Simular primer archivo subido
+    archivo_subido_1 = SimpleUploadedFile("formulario_completado_1.pdf", b"contenido_pdf_v1", content_type="application/pdf")
+    documento_1 = Documento(
+        tramite=context.tramite,
+        nombre="Visa de Turismo",
+        version=1,
+        archivo=archivo_subido_1
+    )
+    documento_1.save()
+
+    # Simular segundo archivo subido
+    archivo_subido_2 = SimpleUploadedFile("formulario_completado_2.pdf", b"contenido_pdf_v2", content_type="application/pdf")
+    documento_2 = Documento(
+        tramite=context.tramite,
+        nombre="Visa de Turismo",
+        version=2,
+        archivo=archivo_subido_2
+    )
+    documento_2.save()
+    context.documentos_subidos = [documento_1, documento_2]
+
+
+@step("el sistema debe guardar los documentos exitosamente")
+def step_impl_verifica_guardado_multiple(context):
+    assert hasattr(context, 'documentos_subidos'), "No se encontraron documentos subidos en el contexto"
+    assert len(context.documentos_subidos) == 2, f"Se esperaban 2 documentos, se encontraron {len(context.documentos_subidos)}"
+    for documento in context.documentos_subidos:
+        assert documento.pk is not None, f"El documento {documento.nombre} versión {documento.version} no se guardó en la base de datos"
+
+
+@step("debe registrarse dos documentos asociados al trámite")
+def step_impl_verificar_dos_documentos_asociados(context):
+    assert hasattr(context, 'documentos_subidos'), "No se encontraron documentos subidos en el contexto"
+    assert len(context.documentos_subidos) == 2, f"Se esperaban 2 documentos, se encontraron {len(context.documentos_subidos)}"
+    for documento in context.documentos_subidos:
+        assert documento.tramite == context.tramite, \
+            f"El documento versión {documento.version} no está asociado al trámite correcto"

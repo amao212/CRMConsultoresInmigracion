@@ -29,3 +29,9 @@ Característica: Gestión de Plantillas Maestras de Documentos
     Cuando el solicitante sube un nuevo archivo PDF corregido para el mismo trámite
     Entonces el sistema debe guardar el nuevo documento como una nueva versión
     Y la versión registrada debe incrementarse a 2
+
+  Escenario: Subir los 2 documentos completados por primera vez
+    Dado que el solicitante tiene un trámite activo de tipo "Visa de Turismo"
+    Cuando el solicitante sube dos archivos PDF completados para este trámite
+    Entonces el sistema debe guardar los documentos exitosamente
+    Y debe registrarse dos documentos asociados al trámite

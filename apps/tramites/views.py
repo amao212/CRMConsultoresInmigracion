@@ -91,51 +91,28 @@ class IniciarTramiteView(LoginRequiredMixin, View):
                 messages.error(request, 'No puedes iniciar este trámite porque ya tienes uno en curso en el mismo segmento.')
                 return redirect(reverse('usuarios:dashboard-solicitante'))
 
-        
+
         # En este flujo modificado, el formulario de inicio de trámite es en realidad
         # la subida del primer documento (plantilla llenada).
         
         form = SubirDocumentoForm(request.POST, request.FILES)
-        
+
         if form.is_valid():
-            archivo = form.cleaned_data['archivo']
+            archivo = form.cleaned_data.get('archivo')
+            archivo_2 = form.cleaned_data.get('archivo_2')
             try:
-                # 1. Crear el trámite básico (sin datos de formulario JSON por ahora)
-                # Usamos un diccionario vacío para form_data ya que los datos están en el PDF
                 nuevo_tramite = iniciar_nuevo_tramite(request.user, plantilla, {})
-                
-                # 2. Guardar el documento subido asociado al trámite
-                # Esto sobrescribirá o complementará lo que hace iniciar_nuevo_tramite
-                # (iniciar_nuevo_tramite actualmente genera un PDF vacío/relleno, aquí subimos el real)
-                
-                # Nota: iniciar_nuevo_tramite ya crea un documento inicial. 
-                # Podríamos refactorizar iniciar_nuevo_tramite para aceptar un archivo inicial,
-                # pero para minimizar cambios, dejaremos que cree el trámite y luego subimos el documento.
-                
-                # Sin embargo, iniciar_nuevo_tramite intenta rellenar un PDF. 
-                # Si pasamos form_data vacío, generará un PDF con campos vacíos.
-                # Lo ideal es que el archivo subido sea el v1.
-                
-                # Ajuste: Vamos a usar guardar_documento para subir el archivo real.
-                # Como iniciar_nuevo_tramite ya crea un v1, este será v2, o podemos reemplazarlo.
-                # Para simplificar y cumplir el requisito "v1", lo mejor sería modificar iniciar_nuevo_tramite
-                # o manejarlo aquí manualmente.
-                
-                # Estrategia: Dejar que iniciar_nuevo_tramite haga su trabajo (creará v1 generado).
-                # Luego subimos el archivo del usuario como v2 (o v1 si logramos interceptarlo).
-                # Dado que el usuario sube SU versión llenada, esa debería ser la válida.
-                
-                # Para cumplir estrictamente "v1" al subir:
-                # Vamos a eliminar el documento generado automáticamente si existe y subir el del usuario.
-                
                 doc_generado = Documento.objects.filter(tramite=nuevo_tramite).first()
                 if doc_generado:
-                    doc_generado.delete() # Borramos el generado por el sistema
-                    
-                # Ahora guardamos el subido por el usuario. Al no haber docs, será v1.
-                guardar_documento(nuevo_tramite, archivo)
-                
-                messages.success(request, f"Trámite '{nuevo_tramite.nombre}' iniciado con éxito. Documento subido correctamente.")
+                    doc_generado.delete()
+                documentos_guardados = 0
+                if archivo:
+                    guardar_documento(nuevo_tramite, archivo)
+                    documentos_guardados += 1
+                if archivo_2:
+                    guardar_documento(nuevo_tramite, archivo_2)
+                    documentos_guardados += 1
+
                 return redirect(reverse('usuarios:dashboard-solicitante'))
                 
             except Exception as e:
@@ -246,7 +223,6 @@ class DetalleTramiteSolicitanteView(LoginRequiredMixin, View):
         # pero por ahora mantenemos la lógica de subir al trámite actual si no está cerrado, o al último.
         # Para simplificar, usamos el tramite_id que llegó en la URL.
         form = SubirDocumentoForm()
-        
         # Determinar si mostrar opción de subida (solo si el trámite actual está en estado final)
         # REQUISITO: La sección “Gestión de Documentos” debe mostrarse solo si el trámite está FINALIZADO (APROBADO, RECHAZADO).
         # Si está en curso (PENDIENTE, EN_PROCESO, etc.), NO debe mostrarse.
@@ -324,10 +300,17 @@ class DetalleTramiteSolicitanteView(LoginRequiredMixin, View):
         form = SubirDocumentoForm(request.POST, request.FILES)
         
         if form.is_valid():
-            archivo = form.cleaned_data['archivo']
+            archivo = form.cleaned_data.get('archivo')
+            archivo_2 = form.cleaned_data.get('archivo_2')
+
             try:
-                guardar_documento(tramite, archivo)
-                messages.success(request, "Documento subido exitosamente.")
+                documentos_guardados = 0
+                if archivo:
+                    guardar_documento(tramite, archivo)
+                    documentos_guardados += 1
+                if archivo_2:
+                    guardar_documento(tramite, archivo_2)
+                    documentos_guardados += 1
             except Exception as e:
                 messages.error(request, f"Error al subir el documento: {e}")
         else:
