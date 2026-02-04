@@ -98,29 +98,29 @@ class IniciarTramiteView(LoginRequiredMixin, View):
         form = SubirDocumentoForm(request.POST, request.FILES)
 
         if form.is_valid():
-            archivo = form.cleaned_data.get('archivo')
-            archivo_2 = form.cleaned_data.get('archivo_2')
-            try:
-                nuevo_tramite = iniciar_nuevo_tramite(request.user, plantilla, {})
-                doc_generado = Documento.objects.filter(tramite=nuevo_tramite).first()
-                if doc_generado:
-                    doc_generado.delete()
-                documentos_guardados = 0
-                if archivo:
-                    guardar_documento(nuevo_tramite, archivo)
-                    documentos_guardados += 1
-                if archivo_2:
-                    guardar_documento(nuevo_tramite, archivo_2)
-                    documentos_guardados += 1
+            archivos = request.FILES.getlist('archivos')
 
+            if archivos:
+                try:
+                    nuevo_tramite = iniciar_nuevo_tramite(request.user, plantilla, {})
+                    doc_generado = Documento.objects.filter(tramite=nuevo_tramite).first()
+                    if doc_generado:
+                        doc_generado.delete()
+
+                    documentos_guardados = 0
+
+                    for archivo in archivos:
+                        guardar_documento(nuevo_tramite, archivo)
+                        documentos_guardados += 1
+
+                    return redirect(reverse('usuarios:dashboard-solicitante'))
+
+                except Exception as e:
+                    messages.error(request, f"Error al iniciar el trámite: {e}")
+                    return redirect(reverse('usuarios:dashboard-solicitante'))
+            else:
+                messages.error(request, "Debe seleccionar al menos un archivo PDF.")
                 return redirect(reverse('usuarios:dashboard-solicitante'))
-                
-            except Exception as e:
-                messages.error(request, f"Error al iniciar el trámite: {e}")
-                return redirect(reverse('usuarios:dashboard-solicitante'))
-        else:
-             messages.error(request, "Error en el archivo subido. Asegúrese de que es un PDF válido y menor a 10MB.")
-             return redirect(reverse('usuarios:dashboard-solicitante'))
 
 
 class ActualizarTramiteView(LoginRequiredMixin, View):
@@ -298,21 +298,23 @@ class DetalleTramiteSolicitanteView(LoginRequiredMixin, View):
             pass
 
         form = SubirDocumentoForm(request.POST, request.FILES)
-        
-        if form.is_valid():
-            archivo = form.cleaned_data.get('archivo')
-            archivo_2 = form.cleaned_data.get('archivo_2')
 
-            try:
-                documentos_guardados = 0
-                if archivo:
-                    guardar_documento(tramite, archivo)
-                    documentos_guardados += 1
-                if archivo_2:
-                    guardar_documento(tramite, archivo_2)
-                    documentos_guardados += 1
-            except Exception as e:
-                messages.error(request, f"Error al subir el documento: {e}")
+        if form.is_valid():
+            # Obtener múltiples archivos desde request.FILES
+            archivos = request.FILES.getlist('archivos')
+
+            if archivos:
+                try:
+                    documentos_guardados = 0
+
+                    for archivo in archivos:
+                        # Guardar el documento
+                        guardar_documento(tramite, archivo)
+                        documentos_guardados += 1
+
+
+                except Exception as e:
+                    messages.error(request, f"Error al subir documentos: {e}")
         else:
             for field, errors in form.errors.items():
                 for error in errors:

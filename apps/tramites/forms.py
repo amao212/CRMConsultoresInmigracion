@@ -1,24 +1,17 @@
 from django import forms
-from django.core.exceptions import ValidationError
 
 class SubirDocumentoForm(forms.Form):
-    archivo = forms.FileField(
-        label="Seleccionar archivo PDF",
-        help_text="Formato PDF. Tamaño máximo 10MB.",
+    archivos = forms.FileField(
+        label="Seleccionar archivo(s) PDF",
+        help_text="Puede seleccionar múltiples archivos. Formato PDF. Tamaño máximo 10MB por archivo.",
         required=False,
-        widget=forms.ClearableFileInput(attrs={'accept': 'application/pdf', 'class': 'form-control-file'})
-    )
-    archivo_2 = forms.FileField(
-        label="Seleccionar segundo archivo PDF",
-        help_text="Formato PDF. Tamaño máximo 10MB.",
-        required=False,
-        widget=forms.ClearableFileInput(attrs={'accept': 'application/pdf', 'class': 'form-control-file'})
+        widget=forms.FileInput(attrs={
+            'accept': 'application/pdf',
+            'class': 'form-control-file',
+            'multiple': False
+        })
     )
 
-    def _validar_pdf(self, archivo):
-        if archivo:
-            if archivo.content_type != 'application/pdf':
-                raise ValidationError("El archivo debe ser un PDF.")
-            if archivo.size > 10 * 1024 * 1024:  # 10MB
-                raise ValidationError("El archivo no debe superar los 10MB.")
-        return archivo
+    def clean_archivos(self):
+        """Validación no se aplica aquí ya que procesamos múltiples archivos en la vista"""
+        return self.cleaned_data.get('archivos')

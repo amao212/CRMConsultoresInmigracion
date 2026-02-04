@@ -44,31 +44,20 @@
                     2. Subir Plantilla Llenada
                 </h5>
                 <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-md);">
-                    Suba el PDF completado para iniciar el trámite.
+                    Suba uno o varios PDF completados para iniciar el trámite. Puede seleccionar múltiples archivos.
                 </p>
 
                 <form method="post" action="{% url 'tramites:iniciar_tramite' plantilla.id %}" enctype="multipart/form-data">
                     {% csrf_token %}
 
-                    <!-- Primer archivo -->
+                    <!-- Campo de múltiples archivos -->
                     <div style="margin-bottom: var(--spacing-md);">
-                        <label for="archivo_inicio" style="display: block; margin-bottom: var(--spacing-xs); color: var(--color-text-primary); font-weight: var(--font-weight-medium);">
-                            Documento 1:
+                        <label for="archivos_inicio" style="display: block; margin-bottom: var(--spacing-xs); color: var(--color-text-primary); font-weight: var(--font-weight-medium);">
+                            Documentos PDF:
                         </label>
-                        <input type="file" name="archivo" id="archivo_inicio" class="form-control-file" accept="application/pdf" style="width: 100%;">
+                        <input type="file" name="archivos" id="archivos_inicio" class="form-control-file" accept="application/pdf" multiple style="width: 100%;">
                         <small style="color: var(--color-text-muted); display: block; margin-top: var(--spacing-xs);">
-                            Formato PDF. Máx 10MB.
-                        </small>
-                    </div>
-
-                    <!-- Segundo archivo (opcional) -->
-                    <div style="margin-bottom: var(--spacing-md);">
-                        <label for="archivo_inicio2" style="display: block; margin-bottom: var(--spacing-xs); color: var(--color-text-primary); font-weight: var(--font-weight-medium);">
-                            Documento 2 :
-                        </label>
-                        <input type="file" name="archivo_2" id="archivo_inicio2" class="form-control-file" accept="application/pdf" style="width: 100%;">
-                        <small style="color: var(--color-text-muted); display: block; margin-top: var(--spacing-xs);">
-                            Formato PDF. Máx 10MB.
+                            Puede seleccionar múltiples archivos. Formato PDF. Máx 10MB por archivo.
                         </small>
                     </div>
 

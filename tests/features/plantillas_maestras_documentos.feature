@@ -35,3 +35,9 @@ Característica: Gestión de Plantillas Maestras de Documentos
     Cuando el solicitante sube dos archivos PDF completados para este trámite
     Entonces el sistema debe guardar los documentos exitosamente
     Y debe registrarse dos documentos asociados al trámite
+
+  Escenario: Subir múltiples documentos completados por primera vez
+    Dado que el solicitante tiene un trámite activo de tipo "Visa de Turismo"
+    Cuando el solicitante sube múltiples archivos PDF completados para este trámite
+    Entonces debe registrarse múltiples documentos asociados al trámite
+    Y debe registrarse múltiples documentos asociados al trámite

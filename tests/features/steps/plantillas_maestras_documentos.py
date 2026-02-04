@@ -291,3 +291,90 @@ def step_impl_verificar_dos_documentos_asociados(context):
     for documento in context.documentos_subidos:
         assert documento.tramite == context.tramite, \
             f"El documento versión {documento.version} no está asociado al trámite correcto"
+
+@step("el solicitante sube tres archivos PDF completados para este trámite")
+def step_impl_sube_tres_pdfs(context):
+    from apps.tramites.models import Documento
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    # Simular primer archivo subido
+    archivo_subido_1 = SimpleUploadedFile("formulario_completado_1.pdf", b"contenido_pdf_v1", content_type="application/pdf")
+    documento_1 = Documento(
+        tramite=context.tramite,
+        nombre="Visa de Turismo",
+        version=1,
+        archivo=archivo_subido_1
+    )
+    documento_1.save()
+
+    # Simular segundo archivo subido
+    archivo_subido_2 = SimpleUploadedFile("formulario_completado_2.pdf", b"contenido_pdf_v2", content_type="application/pdf")
+    documento_2 = Documento(
+        tramite=context.tramite,
+        nombre="Visa de Turismo",
+        version=2,
+        archivo=archivo_subido_2
+    )
+    documento_2.save()
+    # Simular tercer archivo subido
+    archivo_subido_3 = SimpleUploadedFile("formulario_completado_3.pdf", b"contenido_pdf_v3",
+                                          content_type="application/pdf")
+    documento_3 = Documento(
+        tramite=context.tramite,
+        nombre="Visa de Turismo",
+        version=3,
+        archivo=archivo_subido_3
+    )
+    documento_3.save()
+    context.documentos_subidos = [documento_1, documento_2, documento_3]
+
+@step("debe registrarse tres documentos asociados al trámite")
+def step_impl_verificar_tres_documentos_asociados(context):
+    assert hasattr(context, 'documentos_subidos'), "No se encontraron documentos subidos en el contexto"
+    assert len(context.documentos_subidos) == 3, f"Se esperaban 3 documentos, se encontraron {len(context.documentos_subidos)}"
+    for documento in context.documentos_subidos:
+        assert documento.tramite == context.tramite, \
+            f"El documento versión {documento.version} no está asociado al trámite correcto"
+
+# ----------------
+
+@step("el solicitante sube múltiples archivos PDF completados para este trámite")
+def step_impl_sube_multiples_pdfs(context):
+    """
+    Simula la subida de múltiples archivos PDF (5 documentos de ejemplo).
+    """
+    from apps.tramites.models import Documento
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    documentos = []
+    num_documentos = 5  # Cantidad de documentos múltiples
+
+    for i in range(1, num_documentos + 1):
+        archivo = SimpleUploadedFile(
+            f"documento_{i}.pdf",
+            f"contenido_pdf_v{i}".encode(),
+            content_type="application/pdf"
+        )
+        documento = Documento(
+            tramite=context.tramite,
+            nombre="Visa de Turismo",
+            version=i,
+            archivo=archivo
+        )
+        documento.save()
+        documentos.append(documento)
+
+    context.documentos_subidos = documentos
+
+
+@step("debe registrarse múltiples documentos asociados al trámite")
+def step_impl_verificar_multiples_documentos_asociados(context):
+    """
+    Verifica que se hayan registrado múltiples documentos (más de 3) asociados al trámite.
+    """
+    assert hasattr(context, 'documentos_subidos'), "No se encontraron documentos subidos en el contexto"
+    assert len(context.documentos_subidos) > 3, \
+        f"Se esperaban múltiples documentos (>3), se encontraron {len(context.documentos_subidos)}"
+
+    for documento in context.documentos_subidos:
+        assert documento.tramite == context.tramite, \
+            f"El documento versión {documento.version} no está asociado al trámite correcto"
